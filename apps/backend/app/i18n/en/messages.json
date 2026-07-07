@@ -4,5 +4,8 @@
   "auth.invalid_token": "Invalid token",
   "auth.user_not_found": "User not found",
   "auth.permission_denied": "You do not have permission for this action",
-  "legal.consent_not_found": "Consent record not found"
+  "legal.consent_not_found": "Consent record not found",
+  "branches.not_found": "Branch not found",
+  "catalogs.concept_code_exists": "A concept with that code already exists",
+  "catalogs.concept_not_found": "Concept not found"
 }

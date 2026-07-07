@@ -20,6 +20,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "users.view",
     "roles.manage",
     "audit.view",
+    "catalogs.manage",
+    "catalogs.view",
 ]
 
 
