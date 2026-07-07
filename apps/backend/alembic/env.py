@@ -14,7 +14,9 @@ from app.db import models  # noqa: F401 — registra los modelos en Base.metadat
 config = context.config
 
 settings = get_settings()
-sync_url = settings.database_url.replace("+asyncpg", "+psycopg2")
+# Alembic corre SIEMPRE con el superusuario (workforce), nunca con workforce_app
+# (que no tiene privilegios de DDL). El DATABASE_URL de la app apunta a workforce_app.
+sync_url = f"postgresql+psycopg2://{settings.postgres_user}:{settings.postgres_password}@postgres:5432/{settings.postgres_db}"
 config.set_main_option("sqlalchemy.url", sync_url)
 
 if config.config_file_name is not None:

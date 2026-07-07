@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     redis_url: str
     postgres_db: str = "workforce_ai_os"
     postgres_user: str = "workforce"
+    postgres_password: str
+
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
 
 
 @lru_cache
