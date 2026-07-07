@@ -1,0 +1,111 @@
+# WORKFORCE AI OS — docker-compose.yml (Sprint 0)
+# Puertos 5434 (Postgres) y 6381 (Redis) confirmados libres el 2026-07-07.
+# NO usar 5432/5433/6379/6380 — ocupados por wh-postgres/wh-redis, cvg-postgres,
+# cvg-redis y el redis-server nativo del host.
+# 80/443 no se publican al host: todo el tráfico público entra vía Cloudflare Tunnel.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: workforce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-workforce_ai_os}
+      POSTGRES_USER: ${POSTGRES_USER:-workforce}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-workforce}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - workforce-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: workforce-redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - workforce-net
+
+  api:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: workforce-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-workforce}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-workforce_ai_os}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workforce-api.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.workforce-api.loadbalancer.server.port=8000"
+    networks:
+      - workforce-net
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: workforce-frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workforce-frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.workforce-frontend.loadbalancer.server.port=3000"
+    networks:
+      - workforce-net
+
+  traefik:
+    image: traefik:v3.1
+    container_name: workforce-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - workforce-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: workforce-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://traefik:80
+    depends_on:
+      - traefik
+    networks:
+      - workforce-net
+
+networks:
+  workforce-net:
+    name: workforce-ai-os-net
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
