@@ -1,0 +1,6 @@
+{
+  "auth.invalid_credentials": "Credenciales inválidas",
+  "auth.tenant_slug_exists": "El código de empresa ya existe",
+  "auth.invalid_token": "Token inválido",
+  "auth.user_not_found": "Usuario no encontrado"
+}
