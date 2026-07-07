@@ -6,12 +6,20 @@ from sqlalchemy import select, text
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
 from app.db.base import async_session
-from app.db.models import Tenant, User
+from app.db.models import Role, Tenant, User, UserRole
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.modules.auth.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+DEFAULT_ADMIN_PERMISSIONS = [
+    "branches.manage",
+    "branches.view",
+    "users.manage",
+    "users.view",
+    "roles.manage",
+]
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -36,6 +44,19 @@ async def register(payload: RegisterRequest, locale: str = Depends(get_locale)):
             hashed_password=hash_password(payload.password),
         )
         session.add(user)
+        await session.flush()
+
+        admin_role = Role(
+            id=uuid4(),
+            tenant_id=tenant.id,
+            name="admin",
+            permissions=DEFAULT_ADMIN_PERMISSIONS,
+        )
+        session.add(admin_role)
+        await session.flush()
+
+        session.add(UserRole(id=uuid4(), tenant_id=tenant.id, user_id=user.id, role_id=admin_role.id))
+
         await session.commit()
         await session.refresh(user)
 
