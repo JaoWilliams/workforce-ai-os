@@ -123,15 +123,26 @@ WORKFORCE AI OS — plataforma de gestión de fuerza laboral con evidencia biom�
 - 🟢 Infraestructura base — Docker Compose, Postgres 5434, Redis 6381, Traefik (ruteo por archivo estático), Cloudflare Tunnel (`https://watershed-bloggers-karen-presentations.trycloudflare.com`)
 - 🟢 Mód. 1 (parte DB) — Alembic configurado, modelo multi-tenant row-based + RLS **verificado con prueba real** (dos tenants, mismo email, aislamiento confirmado). Rol `workforce_app` sin bypass de RLS (fix crítico — `workforce` es superuser y RLS nunca se aplicaba)
 - 🟢 Mód. 2 (parte auth) — JWT, login por `tenant_slug` + email + password, registro, endpoint `/api/auth/me` protegido
+- 🟢 Mód. 2 (RBAC) — Branch/Role/UserRole/UserBranch con RLS, `require_permission()`, seed de rol admin al registrar tenant. **Verificado con escenario real Burger King** (multi-sucursal, permisos por endpoint)
 - 🟢 Mód. 3 — i18n ES/EN real: backend (`Accept-Language` + catálogos JSON), frontend (`next-intl`, rutas `/es` `/en`)
+- 🟢 Mód. 4 — Cumplimiento legal (Ley 8968): `ConsentRecord`/`AuditLog` con RLS, `log_audit()`, endpoints de consentimiento y bitácora. **Verificado end-to-end** (grant/revoke real con auditoría). Incluyó fix crítico de un bug real: `server_default="now()"` (string plano en SQLAlchemy) grababa un DEFAULT literal congelado en vez de la función `now()` — afectaba 8 columnas en 8 tablas, corregido y documentado en `CLAUDE.md`
+- 🟢 Mód. 6 — Catálogos maestros: `PayrollConcept` parametrizado en 3 dimensiones (método de cálculo, naturaleza, origen), cuenta contable y supervisor en `Branch`. **Verificado con concepto real** (Aguinaldo 8.33% patronal)
 
-**Siguiente candidato lógico (dentro de F1, mods. 1-8):**
-- 🔲 Mód. 4 — Cumplimiento legal y protección de datos (Ley 8968 CR, consentimiento biométrico, auditoría de accesos)
-- 🔲 Mód. 2 (resto) — RBAC real por rol/sucursal/país (hoy solo hay auth, no hay roles ni permisos todavía — ver la consulta de Burger King más arriba en la conversación: falta el concepto de sucursal/centro de costo)
-- 🔲 Mód. 5 — API REST versionada `/v1`, webhooks, SDK de integración (hoy los endpoints son ad-hoc, sin versionado)
-- 🔲 Mód. 6 — Catálogos maestros de nómina (centros de costo, conceptos de ingreso/deducción)
-- 🔲 Mód. 7 — Calendario de nómina
-- 🔲 Mód. 8 — Plataforma de gestión de relojes marcadores (Tiandy/Hikvision/ZKTeco)
+**Orden confirmado para llegar al checkpoint MVP** (basado en las dependencias que el propio documento ya identifica — mód. 10/12 no se pueden probar sin mód. 8, mód. 9 necesita centro de costo del mód. 6, mód. 10 necesita consentimiento biométrico del mód. 4 antes de tocar datos biométricos):
+
+1. ✅ Mód. 2 (resto) — RBAC real: roles y permisos por sucursal/centro de costo
+2. ✅ Mód. 4 — Cumplimiento legal (Ley 8968, consentimiento biométrico, auditoría de accesos)
+3. ✅ Mód. 6 — Catálogos maestros (centros de costo = sucursales, conceptos de ingreso/deducción)
+4. 🔲 Mód. 8 — Plataforma de relojes marcadores (Tiandy/Hikvision/ZKTeco)
+5. 🔲 Mód. 9 — Personal y onboarding
+6. 🔲 Mód. 10 — Enrolamiento biométrico (depende de mód. 8)
+7. 🔲 Mód. 11 — Feature flags por tenant/sucursal
+8. 🔲 Mód. 17a — Motor de Confianza Operativa™ heurístico
+9. 🔲 Mód. 12 — Control de acceso/marcación (depende de mód. 8)
+10. 🔲 Mód. 14 (parte) — Excepciones básicas
+11. ◆ **Checkpoint MVP** — validación con 2-3 empresas piloto reales
+
+*Mód. 5 (API versionada `/v1`) no es un paso aparte — se aplica de forma incremental en cada endpoint nuevo que se construya de acá en adelante, no bloquea la secuencia. Mód. 7 (calendario completo) queda fuera del MVP por decisión ya tomada.*
 
 ---
 
