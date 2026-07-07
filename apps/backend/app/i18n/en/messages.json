@@ -3,5 +3,6 @@
   "auth.tenant_slug_exists": "Company code already exists",
   "auth.invalid_token": "Invalid token",
   "auth.user_not_found": "User not found",
-  "auth.permission_denied": "You do not have permission for this action"
+  "auth.permission_denied": "You do not have permission for this action",
+  "legal.consent_not_found": "Consent record not found"
 }

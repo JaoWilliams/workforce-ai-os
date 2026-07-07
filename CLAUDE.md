@@ -120,3 +120,24 @@ cronograma es referencia de planificación, no fecha comprometida.
 
 El documento completo vive en docs/WORKFORCE_AI_OS_PROYECTO.md. Ante cualquier
 duda o conflicto, ese documento manda sobre cualquier suposición.
+
+## Gotcha: server_default con string plano en SQLAlchemy (bug real, 2026-07-07)
+
+NUNCA usar `server_default="now()"` (string Python plano) para expresiones SQL
+en mapped_column. SQLAlchemy puede grabarlo en el DDL como un valor LITERAL
+congelado (la hora exacta en que corrió la migración), no como la función
+now() real — Postgres queda con `DEFAULT '2026-07-07 22:41:32...'::timestamp`
+en vez de `DEFAULT now()`. Efecto: todas las filas insertadas después
+comparten el mismo timestamp fijo, para siempre, hasta corregir el DEFAULT.
+
+Correcto: `server_default=text("now()")` (requiere `from sqlalchemy import text`).
+
+Se detectó porque los audit_logs de una prueba real (grant/revoke consentimiento
+con ~4 min de diferencia real) mostraban el mismo created_at en las 3 filas.
+Afectó 8 columnas en 8 tablas (todos los created_at/granted_at del proyecto).
+Fix: migración 7933b4efe343 (ALTER COLUMN ... SET DEFAULT now() en las 8) +
+corrección del modelo. Los valores ya insertados con el bug quedan mal para
+siempre (eran datos de prueba, sin impacto real) — el fix es solo hacia adelante.
+
+Regla general: cualquier server_default/server_onupdate que sea una expresión
+SQL (no un literal string/número real) debe ir envuelto en text().

@@ -19,6 +19,7 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "users.manage",
     "users.view",
     "roles.manage",
+    "audit.view",
 ]
 
 

@@ -3,6 +3,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 
+from app.core.audit import log_audit
 from app.core.tenant import tenant_session
 from app.db.models import Branch, User
 from app.modules.branches.schemas import BranchCreate, BranchResponse
@@ -19,6 +20,15 @@ async def create_branch(
     async with tenant_session(current_user.tenant_id) as session:
         branch = Branch(id=uuid4(), tenant_id=current_user.tenant_id, code=payload.code, name=payload.name)
         session.add(branch)
+        await log_audit(
+            session,
+            tenant_id=current_user.tenant_id,
+            actor_user_id=current_user.id,
+            action="branch.created",
+            resource_type="branch",
+            resource_id=branch.id,
+            extra={"code": payload.code, "name": payload.name},
+        )
         await session.commit()
         await session.refresh(branch)
     return BranchResponse(id=branch.id, code=branch.code, name=branch.name)
