@@ -1,0 +1,22 @@
+http:
+  routers:
+    workforce-api:
+      rule: "PathPrefix(`/api`)"
+      service: workforce-api
+      priority: 10
+
+    workforce-frontend:
+      rule: "PathPrefix(`/`)"
+      service: workforce-frontend
+      priority: 1
+
+  services:
+    workforce-api:
+      loadBalancer:
+        servers:
+          - url: "http://api:8000"
+
+    workforce-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:3000"
