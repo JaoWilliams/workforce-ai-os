@@ -244,3 +244,27 @@ qué generó `--autogenerate` primero.
 
 Regla: cualquier constraint agregado a mano en una migración debe
 reflejarse también en `__table_args__` del modelo, en el mismo commit.
+
+
+## Migraciones: el contenedor `api` no ve cambios de host hasta hacer rebuild (2026-07-08)
+
+`alembic revision --autogenerate` corre DENTRO del contenedor `api`, contra
+la imagen ya construida — no contra los archivos del host en tiempo real
+(el Dockerfile hace `COPY . .` en build time, no hay bind mount). Si
+editás `models.py` en el host y corrés `docker compose exec api alembic
+revision --autogenerate` sin reconstruir antes, Alembic compara los
+metadatos de un `models.py` viejo contra la base de datos real y genera
+una migración vacía (`pass` en `upgrade()`) sin ningún error visible que
+lo delate — hay que revisar el contenido generado para notarlo.
+
+Pasó en mód. 14: se generó una migración vacía para `TimeException` porque
+el contenedor corría con la imagen de antes del cambio. Se detectó
+revisando el archivo antes de aplicar (regla ya establecida), se borró la
+revisión vacía (host + contenedor) para no dejar un hueco en la cadena, se
+corrió `docker compose build --no-cache api && docker compose up -d api`,
+y recién ahí se regeneró correctamente.
+
+Regla: después de editar `models.py` (o cualquier código del backend),
+reconstruir la imagen (`docker compose build --no-cache api && docker
+compose up -d api`) ANTES de correr `alembic revision --autogenerate` — no
+alcanza con guardar el archivo en el host.

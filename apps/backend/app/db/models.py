@@ -3,7 +3,7 @@ from sqlalchemy import text
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric, UniqueConstraint
+from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric, UniqueConstraint, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -277,3 +277,34 @@ class TrustFlag(Base):
     details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     resolved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class TimeException(Base):
+    """Mód. 14 (parte) — excepciones básicas: justificación de una anomalía de
+    marcación (con evidencia opcional) y aprobación/rechazo por un supervisor.
+    Referencia opcional a un AttendanceRecord puntual y/o a un TrustFlag del
+    mód. 17a que esta excepción busca resolver."""
+    __tablename__ = "time_exceptions"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    attendance_record_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("attendance_records.id"), nullable=True
+    )
+    trust_flag_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("trust_flags.id"), nullable=True
+    )
+    # missing_checkin | missing_checkout | late_arrival | early_departure | absence | manual_correction | other
+    exception_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    justification: Mapped[str] = mapped_column(Text, nullable=False)
+    # Referencia de texto a evidencia (URL/ruta ya alojada en otro lado) — el MVP no
+    # construye subsistema de carga de archivos propio para este módulo.
+    evidence_reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    # pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
