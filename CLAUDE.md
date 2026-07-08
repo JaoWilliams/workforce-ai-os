@@ -224,3 +224,23 @@ Lección general: al llegar a un módulo, verificar si sus reglas/lógica
 dependen de datos que otro módulo posterior en el orden todavía no genera
 — no asumir que el orden del plan original es siempre el correcto una vez
 que se conoce el detalle real de implementación.
+
+## Bug de Alembic: constraints agregados a mano no declarados en el modelo (2026-07-08)
+
+Cuando se agrega un constraint (UniqueConstraint, CheckConstraint, etc.) a
+mano dentro de una migración (op.execute o sa.UniqueConstraint directo en
+create_table) SIN declararlo también en el modelo SQLAlchemy correspondiente
+(__table_args__), la PRÓXIMA vez que corras `alembic revision --autogenerate`
+Alembic va a comparar el estado real de la BD contra los metadatos del
+modelo, ver ese constraint como "no debería existir" (porque el modelo no
+lo menciona), y proponer un `op.drop_constraint(...)` para borrarlo.
+
+Pasó con `uq_attendance_device_employee_recorded_at` (mód. 12): se agregó
+en la migración de attendance_records pero no en `AttendanceRecord.__table_args__`,
+y la siguiente migración (mód. 17a) casi lo borra automáticamente. Se
+detectó revisando el contenido generado ANTES de aplicar — como con todo
+en este proyecto, nunca correr `alembic upgrade head` a ciegas sin mirar
+qué generó `--autogenerate` primero.
+
+Regla: cualquier constraint agregado a mano en una migración debe
+reflejarse también en `__table_args__` del modelo, en el mismo commit.
