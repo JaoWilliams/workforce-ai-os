@@ -20,5 +20,9 @@
   "biometrics.device_not_found": "El dispositivo indicado no existe",
   "biometrics.device_branch_mismatch": "El dispositivo pertenece a otra sucursal distinta a la del empleado",
   "biometrics.device_at_capacity": "El dispositivo alcanzó su capacidad máxima para este tipo de biometría",
-  "feature_flags.not_found": "La funcionalidad indicada no existe"
+  "feature_flags.not_found": "La funcionalidad indicada no existe",
+  "attendance.employee_not_found": "El empleado indicado no existe",
+  "attendance.device_not_found": "El dispositivo indicado no existe",
+  "attendance.device_branch_mismatch": "El dispositivo pertenece a otra sucursal distinta a la del empleado",
+  "attendance.duplicate": "Ya existe una marcación idéntica para este empleado, dispositivo y hora exacta (posible reconciliación duplicada)"
 }

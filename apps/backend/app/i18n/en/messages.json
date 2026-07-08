@@ -20,5 +20,9 @@
   "biometrics.device_not_found": "The specified device does not exist",
   "biometrics.device_branch_mismatch": "The device belongs to a different branch than the employee's",
   "biometrics.device_at_capacity": "The device has reached its maximum capacity for this biometric type",
-  "feature_flags.not_found": "The specified feature flag does not exist"
+  "feature_flags.not_found": "The specified feature flag does not exist",
+  "attendance.employee_not_found": "The specified employee does not exist",
+  "attendance.device_not_found": "The specified device does not exist",
+  "attendance.device_branch_mismatch": "The device belongs to a different branch than the employee's",
+  "attendance.duplicate": "An identical attendance record already exists for this employee, device, and exact timestamp (possible duplicate reconciliation)"
 }

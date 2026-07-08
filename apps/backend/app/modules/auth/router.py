@@ -30,6 +30,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "biometrics.view",
     "feature_flags.manage",
     "feature_flags.view",
+    "attendance.manage",
+    "attendance.view",
 ]
 
 

@@ -229,3 +229,28 @@ class TenantFeatureFlag(Base):
     branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class AttendanceRecord(Base):
+    """Marcación de entrada/salida. Implementa la estrategia offline decidida
+    en la sección 4 del doc maestro: clave única dispositivo+timestamp+empleado
+    para evitar duplicados durante la reconciliación del buffer del dispositivo."""
+    __tablename__ = "attendance_records"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("devices.id"), nullable=False)
+    # entrada | salida
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    # facial | fingerprint | card | manual
+    verification_method: Mapped[str] = mapped_column(String(20), nullable=False)
+    biometric_enrollment_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("biometric_enrollments.id"), nullable=True
+    )
+    # Hora real del evento (puede diferir de created_at si viene de reconciliación offline).
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Mismo patrón de mód. 10: no hay captura real por dispositivo (mód. 8 sin adaptador
+    # implementado), así que toda marcación hoy se registra manualmente/vía API de prueba.
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
