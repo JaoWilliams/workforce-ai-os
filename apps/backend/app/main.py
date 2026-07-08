@@ -9,6 +9,7 @@ from app.modules.employees.router import router as employees_router
 from app.modules.biometrics.router import router as biometrics_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.attendance.router import router as attendance_router
+from app.modules.confianza_operativa.router import router as confianza_operativa_router
 
 app = FastAPI(title="WORKFORCE AI OS API")
 
@@ -21,6 +22,7 @@ app.include_router(employees_router)
 app.include_router(biometrics_router)
 app.include_router(feature_flags_router)
 app.include_router(attendance_router)
+app.include_router(confianza_operativa_router)
 
 
 @app.get("/api/health")

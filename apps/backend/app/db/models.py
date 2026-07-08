@@ -3,7 +3,7 @@ from sqlalchemy import text
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric
+from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -254,3 +254,26 @@ class AttendanceRecord(Base):
     # implementado), así que toda marcación hoy se registra manualmente/vía API de prueba.
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("device_id", "employee_id", "recorded_at",
+                          name="uq_attendance_device_employee_recorded_at"),
+    )
+
+
+class TrustFlag(Base):
+    """Señal detectada por el Motor de Confianza Operativa™ (versión
+    heurística, mód. 17a) — reglas sin ML sobre AttendanceRecord real."""
+    __tablename__ = "trust_flags"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    # consecutive_same_type | impossible_travel | missing_biometric
+    rule_code: Mapped[str] = mapped_column(String(50), nullable=False)
+    # low | medium | high
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    # ids de AttendanceRecord involucrados + descripción legible de por qué se marcó
+    details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    resolved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

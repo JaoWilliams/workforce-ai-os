@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.audit import log_audit
+from app.core.confianza_operativa import evaluate_new_attendance_record
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
 from app.db.models import AttendanceRecord, Device, Employee, User
@@ -38,8 +39,10 @@ async def create_attendance_record(
         device = device_result.scalar_one_or_none()
         if device is None:
             raise HTTPException(status_code=400, detail=translate("attendance.device_not_found", locale))
-        if device.branch_id != employee.branch_id:
-            raise HTTPException(status_code=400, detail=translate("attendance.device_branch_mismatch", locale))
+        # NOTA: a propósito NO se rechaza marcar en un dispositivo de otra sucursal —
+        # eso es justo lo que el Motor de Confianza Operativa™ (mód. 17a) necesita poder
+        # observar para marcarlo como señal de "patrón imposible" cuando el tiempo entre
+        # marcaciones es demasiado corto. Bloquearlo acá impediría que la regla exista.
 
         record = AttendanceRecord(
             id=uuid4(),
@@ -66,6 +69,19 @@ async def create_attendance_record(
                    "type": payload.type, "verification_method": payload.verification_method,
                    "recorded_at": payload.recorded_at.isoformat(), "is_simulated": True},
         )
+
+        # Motor de Confianza Operativa™ heurístico (mód. 17a) — evalúa la marcación
+        # nueva en tiempo real contra la inmediatamente anterior del mismo empleado.
+        new_flags = await evaluate_new_attendance_record(
+            session, current_user.tenant_id, payload.employee_id, record, device.branch_id,
+        )
+        for flag in new_flags:
+            await log_audit(
+                session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+                action="trust_flag.detected", resource_type="trust_flag", resource_id=flag.id,
+                extra={"rule_code": flag.rule_code, "severity": flag.severity, "details": flag.details},
+            )
+
         await session.commit()
         await session.refresh(record)
     return _to_response(record)

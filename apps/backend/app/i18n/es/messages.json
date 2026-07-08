@@ -24,5 +24,6 @@
   "attendance.employee_not_found": "El empleado indicado no existe",
   "attendance.device_not_found": "El dispositivo indicado no existe",
   "attendance.device_branch_mismatch": "El dispositivo pertenece a otra sucursal distinta a la del empleado",
-  "attendance.duplicate": "Ya existe una marcación idéntica para este empleado, dispositivo y hora exacta (posible reconciliación duplicada)"
+  "attendance.duplicate": "Ya existe una marcación idéntica para este empleado, dispositivo y hora exacta (posible reconciliación duplicada)",
+  "confianza.flag_not_found": "La señal indicada no existe"
 }

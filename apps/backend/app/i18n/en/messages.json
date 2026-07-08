@@ -24,5 +24,6 @@
   "attendance.employee_not_found": "The specified employee does not exist",
   "attendance.device_not_found": "The specified device does not exist",
   "attendance.device_branch_mismatch": "The device belongs to a different branch than the employee's",
-  "attendance.duplicate": "An identical attendance record already exists for this employee, device, and exact timestamp (possible duplicate reconciliation)"
+  "attendance.duplicate": "An identical attendance record already exists for this employee, device, and exact timestamp (possible duplicate reconciliation)",
+  "confianza.flag_not_found": "The specified trust flag does not exist"
 }

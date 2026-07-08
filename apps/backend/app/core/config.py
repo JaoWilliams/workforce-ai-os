@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    # Umbral heurístico del Motor de Confianza Operativa™ (mód. 17a): si un
+    # empleado marca en dos sucursales distintas con menos de este margen
+    # entre marcaciones, se considera un patrón físicamente imposible.
+    # Configurable por env var (no hardcodeado) — se ajusta según feedback
+    # real del piloto, sin necesidad de tocar código.
+    confianza_impossible_travel_minutes: int = 30
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -32,6 +32,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "feature_flags.view",
     "attendance.manage",
     "attendance.view",
+    "confianza.manage",
+    "confianza.view",
 ]
 
 
