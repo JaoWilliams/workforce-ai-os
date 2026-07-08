@@ -172,3 +172,23 @@ en elementos comunes del Código de Trabajo de Costa Rica — NO son asesoría
 legal. Mismo tratamiento que el motor de renta: pendiente de revisión por un
 abogado laboral antes de usarse como contrato oficial con un cliente real. El
 aviso queda impreso en el propio documento generado.
+
+## Excepción explícita a "cero mock": captura biométrica del mód. 10 (2026-07-08)
+
+Único mock autorizado en el proyecto hasta ahora, y por decisión explícita
+del usuario, no por defecto. Mód. 10 (enrolamiento biométrico) simula
+únicamente la CAPTURA del dato biométrico (no hay hardware Tiandy/Hikvision/
+ZKTeco real conectado — ver mód. 8). Todo lo demás en mód. 10 es real:
+validación de consentimiento vigente, validación de sucursal, validación de
+capacidad del dispositivo, auditoría.
+
+Cómo identificar el mock en código y datos: `BiometricEnrollment.is_simulated`
+(siempre `true` hoy), `template_reference` con prefijo literal `SIMULATED-`,
+y el audit log de `biometric_enrollment.created` incluye `is_simulated: true`
+en su `extra`. Nunca remover ese prefijo/flag ni mezclar con datos reales.
+
+Cuándo reemplazar: cuando exista un dispositivo físico accesible (ver
+decisión de mód. 8 en este mismo archivo) y su `DeviceAdapter` esté
+implementado de verdad. En ese momento, `is_simulated` debe pasar a `false`
+para los enrolamientos hechos contra hardware real, y el mock deja de usarse
+salvo que se pida explícitamente de nuevo para demos.
