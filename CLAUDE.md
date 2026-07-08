@@ -141,3 +141,24 @@ siempre (eran datos de prueba, sin impacto real) — el fix es solo hacia adelan
 
 Regla general: cualquier server_default/server_onupdate que sea una expresión
 SQL (no un literal string/número real) debe ir envuelto en text().
+
+## Decisión: adaptadores de dispositivos sin hardware real (2026-07-08)
+
+Mód. 8 (relojes marcadores) se construyó con alcance dividido a propósito:
+inventario de dispositivos (`Device`) 100% real e implementado, pero la capa
+de comunicación (`DeviceAdapter` — heartbeat, sync biométrico, firmware) NO
+se implementó, porque no hay un Tiandy/Hikvision/ZKTeco físico accesible en
+red para probarla de verdad. Implementar esa capa sin hardware real violaría
+la regla "cero mock" (no simular respuestas de algo que no existe).
+
+Cada adaptador (`app/modules/devices/adapters/{tiandy,hikvision,zkteco}.py`)
+levanta `NotImplementedError` explícito en sus 3 métodos. Cuando haya un
+dispositivo físico disponible (empezando probablemente por un ZKTeco
+SenseFace 4A, specs ya cargadas en el modelo `Device`), implementar el
+adaptador correspondiente contra el SDK real del fabricante (ZKBio para
+ZKTeco) y probarlo end-to-end antes de marcarlo como completo.
+
+Esto mismo aplica en cascada a mód. 10 (enrolamiento biométrico) y mód. 12
+(marcación): su modelo de datos y flujo de negocio se pueden construir y
+probar, pero la comunicación real con el dispositivo queda con la misma
+limitación hasta tener hardware de prueba.
