@@ -9,5 +9,10 @@
   "catalogs.concept_code_exists": "Ya existe un concepto con ese código",
   "catalogs.concept_not_found": "Concepto no encontrado",
   "devices.branch_not_found": "La sucursal indicada no existe",
-  "devices.not_found": "Dispositivo no encontrado"
+  "devices.not_found": "Dispositivo no encontrado",
+  "employees.branch_not_found": "La sucursal indicada no existe",
+  "employees.id_number_exists": "Ya existe un empleado con ese número de identificación",
+  "employees.not_found": "Empleado no encontrado",
+  "contracts.end_date_required": "Los contratos a plazo fijo o por obra requieren fecha de finalización",
+  "contracts.end_date_not_allowed": "Los contratos indefinidos no deben tener fecha de finalización"
 }

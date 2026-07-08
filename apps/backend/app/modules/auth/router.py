@@ -24,6 +24,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "catalogs.view",
     "devices.manage",
     "devices.view",
+    "employees.manage",
+    "employees.view",
 ]
 
 

@@ -48,6 +48,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://workforce_app:${WORKFORCE_APP_PASSWORD}@postgres:5432/${POSTGRES_DB:-workforce_ai_os}
       REDIS_URL: redis://redis:6379/0
+    volumes:
+      - contracts_data:/app/storage/contracts
     depends_on:
       postgres:
         condition: service_healthy
@@ -108,3 +110,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  contracts_data:

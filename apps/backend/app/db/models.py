@@ -3,7 +3,7 @@ from sqlalchemy import text
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Boolean, Numeric
+from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -137,4 +137,40 @@ class Device(Base):
     max_events: Mapped[Optional[int]] = mapped_column(nullable=True)
     # ej. ["facial", "fingerprint", "card", "password"] — según lo que soporte el modelo real
     verification_methods: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    branch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    # cedula_fisica | cedula_juridica | dimex | pasaporte
+    id_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    id_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    position: Mapped[str] = mapped_column(String(150), nullable=False)
+    hire_date: Mapped[Date] = mapped_column(Date, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class Contract(Base):
+    __tablename__ = "contracts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    # indefinido | plazo_fijo | por_obra
+    contract_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    start_date: Mapped[Date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
+    base_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    # CRC | USD | GTQ | HNL | NIO | PAB (multimoneda, ver sección 4 del doc maestro)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="CRC")
+    pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

@@ -9,5 +9,10 @@
   "catalogs.concept_code_exists": "A concept with that code already exists",
   "catalogs.concept_not_found": "Concept not found",
   "devices.branch_not_found": "The specified branch does not exist",
-  "devices.not_found": "Device not found"
+  "devices.not_found": "Device not found",
+  "employees.branch_not_found": "The specified branch does not exist",
+  "employees.id_number_exists": "An employee with that identification number already exists",
+  "employees.not_found": "Employee not found",
+  "contracts.end_date_required": "Fixed-term or by-project contracts require an end date",
+  "contracts.end_date_not_allowed": "Indefinite contracts must not have an end date"
 }
