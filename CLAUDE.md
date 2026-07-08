@@ -208,3 +208,19 @@ usar ese helper en vez de reimplementar la lógica. El seed inicial de
 `feature_flags` reflejó los módulos ya construidos y probados (no son
 placeholders) — agregar una fila nueva al catálogo (vía migración) cada vez
 que un módulo nuevo llegue a un punto demostrable.
+
+## Corrección de orden: mód. 12 antes que 17a (2026-07-08)
+
+El plan original (WORKFORCE_AI_OS_PROYECTO.md sección 5.3) ponía el mód.
+17a (Motor de Confianza Operativa™ heurístico) antes que el mód. 12
+(control de acceso/marcación). Al llegar a construirlo se detectó que las
+reglas del 17a (marcaciones duplicadas, patrones imposibles, ausencia de
+biometría en marcaciones críticas) necesitan datos reales de
+`AttendanceRecord`, tabla que crea justamente el mód. 12. Se invirtió el
+orden: 12 primero (ya completo y verificado), 17a evalúa sus reglas sobre
+esas marcaciones reales.
+
+Lección general: al llegar a un módulo, verificar si sus reglas/lógica
+dependen de datos que otro módulo posterior en el orden todavía no genera
+— no asumir que el orden del plan original es siempre el correcto una vez
+que se conoce el detalle real de implementación.
