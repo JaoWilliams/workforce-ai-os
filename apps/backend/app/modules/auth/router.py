@@ -28,6 +28,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "employees.view",
     "biometrics.manage",
     "biometrics.view",
+    "feature_flags.manage",
+    "feature_flags.view",
 ]
 
 

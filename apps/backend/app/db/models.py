@@ -199,3 +199,33 @@ class BiometricEnrollment(Base):
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     enrolled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class FeatureFlag(Base):
+    """Catálogo global de funcionalidades activables por plan (sin RLS,
+    igual que Tenant — es catálogo público de la plataforma, no dato
+    de una empresa en particular)."""
+    __tablename__ = "feature_flags"
+
+    code: Mapped[str] = mapped_column(String(50), primary_key=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    # core | addon | premium (mismo criterio de categorías de la tabla de módulos, sección 6.1)
+    category: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class TenantFeatureFlag(Base):
+    """Override de habilitación por tenant, opcionalmente por sucursal.
+    Si no existe fila para un (tenant, flag[, branch]), el default es:
+    category='core' -> habilitado, cualquier otra categoría -> deshabilitado
+    (ver core/feature_flags.py: is_feature_enabled)."""
+    __tablename__ = "tenant_feature_flags"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    feature_flag_code: Mapped[str] = mapped_column(String(50), ForeignKey("feature_flags.code"), nullable=False)
+    # NULL = override a nivel de todo el tenant. Con valor = override solo para esa sucursal.
+    branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

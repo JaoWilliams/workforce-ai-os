@@ -19,5 +19,6 @@
   "biometrics.consent_required": "The employee does not have an active biometric consent. It must be recorded before enrollment.",
   "biometrics.device_not_found": "The specified device does not exist",
   "biometrics.device_branch_mismatch": "The device belongs to a different branch than the employee's",
-  "biometrics.device_at_capacity": "The device has reached its maximum capacity for this biometric type"
+  "biometrics.device_at_capacity": "The device has reached its maximum capacity for this biometric type",
+  "feature_flags.not_found": "The specified feature flag does not exist"
 }

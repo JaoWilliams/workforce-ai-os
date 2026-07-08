@@ -19,5 +19,6 @@
   "biometrics.consent_required": "El empleado no tiene un consentimiento biométrico vigente. Debe registrarse antes de enrolar.",
   "biometrics.device_not_found": "El dispositivo indicado no existe",
   "biometrics.device_branch_mismatch": "El dispositivo pertenece a otra sucursal distinta a la del empleado",
-  "biometrics.device_at_capacity": "El dispositivo alcanzó su capacidad máxima para este tipo de biometría"
+  "biometrics.device_at_capacity": "El dispositivo alcanzó su capacidad máxima para este tipo de biometría",
+  "feature_flags.not_found": "La funcionalidad indicada no existe"
 }
