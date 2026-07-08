@@ -7,5 +7,7 @@
   "legal.consent_not_found": "Consentimiento no encontrado",
   "branches.not_found": "Sucursal no encontrada",
   "catalogs.concept_code_exists": "Ya existe un concepto con ese código",
-  "catalogs.concept_not_found": "Concepto no encontrado"
+  "catalogs.concept_not_found": "Concepto no encontrado",
+  "devices.branch_not_found": "La sucursal indicada no existe",
+  "devices.not_found": "Dispositivo no encontrado"
 }

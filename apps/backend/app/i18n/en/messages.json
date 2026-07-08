@@ -7,5 +7,7 @@
   "legal.consent_not_found": "Consent record not found",
   "branches.not_found": "Branch not found",
   "catalogs.concept_code_exists": "A concept with that code already exists",
-  "catalogs.concept_not_found": "Concept not found"
+  "catalogs.concept_not_found": "Concept not found",
+  "devices.branch_not_found": "The specified branch does not exist",
+  "devices.not_found": "Device not found"
 }

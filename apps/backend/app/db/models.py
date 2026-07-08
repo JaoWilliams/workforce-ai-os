@@ -112,3 +112,29 @@ class PayrollConcept(Base):
     value: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    branch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=False)
+    # tiandy | hikvision | zkteco
+    brand: Mapped[str] = mapped_column(String(20), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    serial_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    # IP dentro de la red interna del cliente — el dispositivo nunca se expone a internet,
+    # el backend le habla vía esta IP solo cuando exista el adaptador real (ver módulo 8/24).
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    # not_provisioned | online | offline (heartbeat real pendiente de adaptador de marca)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="not_provisioned")
+    # Capacidades reales del datasheet del dispositivo (ej. ZKTeco SenseFace 4A: 6000/8000/8000/200000).
+    # Se cargan al dar de alta el dispositivo, no son constantes de código — varían por marca/modelo.
+    max_faces: Mapped[Optional[int]] = mapped_column(nullable=True)
+    max_fingerprints: Mapped[Optional[int]] = mapped_column(nullable=True)
+    max_cards: Mapped[Optional[int]] = mapped_column(nullable=True)
+    max_events: Mapped[Optional[int]] = mapped_column(nullable=True)
+    # ej. ["facial", "fingerprint", "card", "password"] — según lo que soporte el modelo real
+    verification_methods: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

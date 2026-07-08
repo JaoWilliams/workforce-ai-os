@@ -22,6 +22,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "audit.view",
     "catalogs.manage",
     "catalogs.view",
+    "devices.manage",
+    "devices.view",
 ]
 
 
