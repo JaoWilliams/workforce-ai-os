@@ -1,9 +1,9 @@
 {
-  "name": "WORKFORCE AI OS",
-  "short_name": "WorkforceAI",
+  "name": "WORKFORCE AI",
+  "short_name": "WORKFORCE AI",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#2A1008",
+  "theme_color": "#2A1008",
   "icons": []
 }

@@ -1,11 +1,12 @@
-import {useTranslations} from 'next-intl';
+"use client";
+import { useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 
 export default function Home() {
-  const t = useTranslations('home');
-  return (
-    <main>
-      <h1>{t('title')}</h1>
-      <p>{t('subtitle')}</p>
-    </main>
-  );
+  const router = useRouter();
+  const params = useParams();
+  useEffect(() => {
+    router.replace(`/${params.locale}/login`);
+  }, [router, params.locale]);
+  return null;
 }

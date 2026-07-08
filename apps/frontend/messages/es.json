@@ -1,6 +1,45 @@
 {
-  "home": {
-    "title": "WORKFORCE AI OS",
-    "subtitle": "Sprint 0 — scaffold funcionando."
+  "auth": {
+    "title": "Iniciar sesión",
+    "tenant_slug": "Código de empresa",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "error": "No se pudo iniciar sesión. Verificá tus datos."
+  },
+  "nav": {
+    "dashboard": "Inicio",
+    "employees": "Empleados",
+    "devices": "Dispositivos",
+    "feature_flags": "Funcionalidades",
+    "attendance": "Marcación",
+    "confianza": "Confianza Operativa",
+    "exceptions": "Excepciones",
+    "logout": "Cerrar sesión"
+  },
+  "dashboard": {
+    "welcome_title": "Bienvenido a WORKFORCE AI",
+    "welcome_body": "Plataforma de gestión de fuerza laboral con evidencia biométrica y Motor de Confianza Operativa™. Usá el menú de la izquierda para recorrer cada módulo con datos reales de Burger King."
+  },
+  "employees": {
+    "title": "Empleados",
+    "id_number": "Cédula",
+    "position": "Puesto",
+    "hire_date": "Fecha de ingreso",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "contracts_title": "Contratos",
+    "contract_type": "Tipo de contrato",
+    "start_date": "Inicio",
+    "end_date": "Fin",
+    "no_end_date": "Indefinido",
+    "base_salary": "Salario base",
+    "download_pdf": "Descargar PDF",
+    "no_contracts": "Sin contratos registrados",
+    "no_employees": "No hay empleados registrados",
+    "select_employee": "Seleccioná un empleado para ver sus contratos",
+    "contract_type_indefinido": "Indefinido",
+    "contract_type_plazo_fijo": "Plazo fijo",
+    "contract_type_por_obra": "Por obra"
   }
 }

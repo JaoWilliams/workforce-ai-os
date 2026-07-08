@@ -1,6 +1,45 @@
 {
-  "home": {
-    "title": "WORKFORCE AI OS",
-    "subtitle": "Sprint 0 — scaffold working."
+  "auth": {
+    "title": "Sign in",
+    "tenant_slug": "Company code",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "error": "Could not sign in. Check your details."
+  },
+  "nav": {
+    "dashboard": "Home",
+    "employees": "Employees",
+    "devices": "Devices",
+    "feature_flags": "Features",
+    "attendance": "Attendance",
+    "confianza": "Trust Engine",
+    "exceptions": "Exceptions",
+    "logout": "Log out"
+  },
+  "dashboard": {
+    "welcome_title": "Welcome to WORKFORCE AI",
+    "welcome_body": "Workforce management platform with biometric evidence and the Operational Trust Engine™. Use the menu on the left to walk through each module with real Burger King data."
+  },
+  "employees": {
+    "title": "Employees",
+    "id_number": "ID number",
+    "position": "Position",
+    "hire_date": "Hire date",
+    "active": "Active",
+    "inactive": "Inactive",
+    "contracts_title": "Contracts",
+    "contract_type": "Contract type",
+    "start_date": "Start",
+    "end_date": "End",
+    "no_end_date": "Indefinite",
+    "base_salary": "Base salary",
+    "download_pdf": "Download PDF",
+    "no_contracts": "No contracts on file",
+    "no_employees": "No employees on file",
+    "select_employee": "Select an employee to view their contracts",
+    "contract_type_indefinido": "Indefinite",
+    "contract_type_plazo_fijo": "Fixed term",
+    "contract_type_por_obra": "Per project"
   }
 }
