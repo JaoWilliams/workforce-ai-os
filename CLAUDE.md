@@ -192,3 +192,19 @@ decisión de mód. 8 en este mismo archivo) y su `DeviceAdapter` esté
 implementado de verdad. En ese momento, `is_simulated` debe pasar a `false`
 para los enrolamientos hechos contra hardware real, y el mock deja de usarse
 salvo que se pida explícitamente de nuevo para demos.
+
+## Patrón: feature flags con default por categoría (2026-07-08)
+
+Mód. 11 agrega `FeatureFlag` (catálogo público, sin RLS, igual que
+`tenants`) y `TenantFeatureFlag` (override con RLS, opcionalmente por
+sucursal vía `branch_id` nullable). Regla de default cuando NO hay fila de
+override: `category='core'` → habilitado, cualquier otra categoría
+(`addon`/`premium`) → deshabilitado. Resolución de precedencia: override de
+sucursal > override de tenant > default por categoría — ver
+`core/feature_flags.py: is_feature_enabled()`.
+
+Cualquier módulo futuro que necesite gatear una funcionalidad por plan debe
+usar ese helper en vez de reimplementar la lógica. El seed inicial de
+`feature_flags` reflejó los módulos ya construidos y probados (no son
+placeholders) — agregar una fila nueva al catálogo (vía migración) cada vez
+que un módulo nuevo llegue a un punto demostrable.
