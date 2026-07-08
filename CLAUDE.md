@@ -162,3 +162,13 @@ Esto mismo aplica en cascada a mód. 10 (enrolamiento biométrico) y mód. 12
 (marcación): su modelo de datos y flujo de negocio se pueden construir y
 probar, pero la comunicación real con el dispositivo queda con la misma
 limitación hasta tener hardware de prueba.
+
+## Decisión: PDF de contrato con cláusulas de referencia, pendiente revisión legal (2026-07-08)
+
+Mód. 9 genera un PDF real bilingüe (ES/EN) del contrato de trabajo con datos
+reales del empleado (`app/core/contracts_pdf.py`, reportlab). Las cláusulas
+generales (jornada, aguinaldo, vacaciones) son un modelo de referencia basado
+en elementos comunes del Código de Trabajo de Costa Rica — NO son asesoría
+legal. Mismo tratamiento que el motor de renta: pendiente de revisión por un
+abogado laboral antes de usarse como contrato oficial con un cliente real. El
+aviso queda impreso en el propio documento generado.
