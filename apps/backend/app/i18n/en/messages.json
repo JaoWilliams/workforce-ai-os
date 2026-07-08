@@ -14,5 +14,10 @@
   "employees.id_number_exists": "An employee with that identification number already exists",
   "employees.not_found": "Employee not found",
   "contracts.end_date_required": "Fixed-term or by-project contracts require an end date",
-  "contracts.end_date_not_allowed": "Indefinite contracts must not have an end date"
+  "contracts.end_date_not_allowed": "Indefinite contracts must not have an end date",
+  "legal.employee_not_found": "The specified employee does not exist",
+  "biometrics.consent_required": "The employee does not have an active biometric consent. It must be recorded before enrollment.",
+  "biometrics.device_not_found": "The specified device does not exist",
+  "biometrics.device_branch_mismatch": "The device belongs to a different branch than the employee's",
+  "biometrics.device_at_capacity": "The device has reached its maximum capacity for this biometric type"
 }

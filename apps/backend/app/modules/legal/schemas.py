@@ -7,11 +7,15 @@ from pydantic import BaseModel
 
 class ConsentGrant(BaseModel):
     consent_type: str = "biometric"
+    # Si se indica, el consentimiento es del empleado (caso real de biometría,
+    # Ley 8968). Si se omite, es autoconsentimiento del usuario logueado.
+    employee_id: Optional[UUID] = None
 
 
 class ConsentResponse(BaseModel):
     id: UUID
-    user_id: UUID
+    user_id: Optional[UUID] = None
+    employee_id: Optional[UUID] = None
     consent_type: str
     granted: bool
     granted_at: datetime

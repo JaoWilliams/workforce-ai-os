@@ -30,3 +30,18 @@ def require_permission(code: str):
         return current_user
 
     return checker
+
+
+async def user_has_permission(session, user_id, tenant_id, code: str) -> bool:
+    """Chequeo manual de permiso (para casos donde no se puede usar el
+    dependency factory require_permission directamente, ej. lógica
+    condicional dentro de un mismo endpoint)."""
+    result = await session.execute(
+        select(Role.permissions)
+        .join(UserRole, UserRole.role_id == Role.id)
+        .where(UserRole.user_id == user_id)
+    )
+    all_permissions: set[str] = set()
+    for (perms,) in result.all():
+        all_permissions.update(perms or [])
+    return code in all_permissions

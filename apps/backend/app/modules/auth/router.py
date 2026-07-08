@@ -26,6 +26,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "devices.view",
     "employees.manage",
     "employees.view",
+    "biometrics.manage",
+    "biometrics.view",
 ]
 
 

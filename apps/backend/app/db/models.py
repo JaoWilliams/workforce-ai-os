@@ -76,7 +76,12 @@ class ConsentRecord(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    # user_id: cuenta de login que consiente por sí misma (caso original).
+    # employee_id: empleado sujeto del consentimiento (caso real de biometría, Ley 8968) —
+    # el empleado normalmente NO tiene cuenta de login, un admin lo registra en su nombre.
+    # Exactamente uno de los dos debe estar presente (validado en el endpoint).
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    employee_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=True)
     consent_type: Mapped[str] = mapped_column(String(50), nullable=False)
     granted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
@@ -174,3 +179,23 @@ class Contract(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="CRC")
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class BiometricEnrollment(Base):
+    __tablename__ = "biometric_enrollments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("devices.id"), nullable=False)
+    consent_record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("consent_records.id"), nullable=False)
+    # facial | fingerprint | card
+    biometric_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Referencia/placeholder — NUNCA datos biométricos reales, ver is_simulated abajo.
+    template_reference: Mapped[str] = mapped_column(String(200), nullable=False)
+    # Mock EXPLÍCITAMENTE autorizado por el usuario (2026-07-08) ante ausencia de
+    # hardware real, solo para demo del MVP. Debe ser true hasta que exista un
+    # DeviceAdapter real implementado y probado — ver adapters/base.py y CLAUDE.md.
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    enrolled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
