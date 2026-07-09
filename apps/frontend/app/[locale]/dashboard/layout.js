@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getSession, clearSession } from "../../../lib/api";
+import { ToastProvider } from "../../../lib/toast";
 
 const NAV_ITEMS = [
   { key: "dashboard", href: "" },
   { key: "employees", href: "/empleados" },
   { key: "devices", href: "/dispositivos" },
+  { key: "shifts", href: "/turnos" },
   { key: "feature_flags", href: "/feature-flags" },
   { key: "attendance", href: "/marcacion" },
   { key: "confianza", href: "/confianza" },
@@ -47,6 +49,7 @@ export default function DashboardLayout({ children }) {
   if (!checked || !session) return null;
 
   return (
+    <ToastProvider>
     <div className="min-h-screen flex bg-bk-cream2">
       <aside className="w-64 bg-bk-brown text-bk-cream flex flex-col">
         <div className="px-5 py-6 border-b border-bk-orange/25">
@@ -97,5 +100,6 @@ export default function DashboardLayout({ children }) {
       </aside>
       <main className="flex-1 p-8 overflow-y-auto">{children}</main>
     </div>
+    </ToastProvider>
   );
 }
