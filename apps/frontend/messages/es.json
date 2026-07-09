@@ -86,5 +86,14 @@
     "simulated_badge": "SIMULADO",
     "select_device": "Seleccioná dispositivo",
     "enrolled_at": "Enrolado el"
+  },
+  "feature_flags": {
+    "title": "Funcionalidades",
+    "no_flags": "No hay funcionalidades registradas",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "updated_ok": "Actualizado correctamente",
+    "source_default": "Valor por defecto",
+    "source_tenant_override": "Configurado por la empresa"
   }
 }
