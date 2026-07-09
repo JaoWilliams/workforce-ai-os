@@ -36,6 +36,8 @@ DEFAULT_ADMIN_PERMISSIONS = [
     "confianza.view",
     "exceptions.manage",
     "exceptions.view",
+    "shifts.manage",
+    "shifts.view",
 ]
 
 

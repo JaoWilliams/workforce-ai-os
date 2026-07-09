@@ -30,5 +30,9 @@
   "exceptions.trust_flag_not_found": "Señal de confianza operativa no encontrada o no pertenece a este empleado",
   "feature_flags.not_found": "La funcionalidad indicada no existe",
   "legal.consent_not_found": "Consentimiento no encontrado",
-  "legal.employee_not_found": "El empleado indicado no existe"
+  "legal.employee_not_found": "El empleado indicado no existe",
+  "shifts.branch_not_found": "Sucursal no encontrada",
+  "shifts.employee_not_found": "Empleado no encontrado",
+  "shifts.template_not_found": "Plantilla de turno no encontrada",
+  "shifts.invalid_date_range": "La fecha de fin no puede ser anterior a la fecha de inicio"
 }

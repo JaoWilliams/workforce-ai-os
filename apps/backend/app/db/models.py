@@ -1,9 +1,9 @@
 import uuid
 from sqlalchemy import text
-from datetime import datetime
+from datetime import datetime, date, time
 from typing import Optional
 
-from sqlalchemy import DateTime, Date, ForeignKey, String, Boolean, Numeric, UniqueConstraint, Text
+from sqlalchemy import DateTime, Date, Time, ForeignKey, String, Boolean, Numeric, UniqueConstraint, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -307,4 +307,38 @@ class TimeException(Base):
     )
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class ShiftTemplate(Base):
+    """Plantilla de turno recurrente por sucursal (mód. 13). El supervisor se
+    hereda de Branch.supervisor_user_id (mód. 6) — no se duplica acá."""
+    __tablename__ = "shift_templates"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    branch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    # 0=lunes ... 6=domingo
+    days_of_week: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    min_coverage: Mapped[int] = mapped_column(nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class ShiftAssignment(Base):
+    """Asignación de un empleado a una plantilla de turno, por rango de fechas
+    — permite rotación real: el mismo empleado puede tener asignaciones
+    distintas en rangos de fecha distintos."""
+    __tablename__ = "shift_assignments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    shift_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shift_templates.id"), nullable=False
+    )
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
