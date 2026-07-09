@@ -95,5 +95,30 @@
     "updated_ok": "Actualizado correctamente",
     "source_default": "Valor por defecto",
     "source_tenant_override": "Configurado por la empresa"
+  },
+  "confianza": {
+    "title": "Motor de Confianza Operativa™",
+    "subtitle": "Detección automática de patrones de riesgo en marcaciones — reglas heurísticas sobre datos reales, sin machine learning.",
+    "stat_total": "Total de señales",
+    "stat_pending": "Pendientes",
+    "stat_resolved": "Resueltas",
+    "stat_high": "Severidad alta",
+    "filter_all": "Todas",
+    "filter_pending": "Pendientes",
+    "filter_resolved": "Resueltas",
+    "severity_low": "Baja",
+    "severity_medium": "Media",
+    "severity_high": "Alta",
+    "rule_consecutive_same_type": "Marcaciones consecutivas del mismo tipo",
+    "rule_impossible_travel": "Viaje imposible entre sucursales",
+    "rule_missing_biometric": "Marcación sin verificación biométrica",
+    "resolve": "Marcar como resuelto",
+    "reopen": "Reabrir",
+    "pending_badge": "Pendiente",
+    "resolved_badge": "Resuelto",
+    "no_flags": "No hay señales registradas",
+    "detected_at": "Detectado el",
+    "gap_detail": "Diferencia real: {gap} min (umbral: {threshold} min)",
+    "employee_unknown": "Empleado desconocido"
   }
 }

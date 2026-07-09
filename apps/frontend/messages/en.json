@@ -95,5 +95,30 @@
     "updated_ok": "Updated successfully",
     "source_default": "Default value",
     "source_tenant_override": "Set by company"
+  },
+  "confianza": {
+    "title": "Operational Trust Engine™",
+    "subtitle": "Automatic detection of risk patterns in attendance records — heuristic rules over real data, no machine learning.",
+    "stat_total": "Total signals",
+    "stat_pending": "Pending",
+    "stat_resolved": "Resolved",
+    "stat_high": "High severity",
+    "filter_all": "All",
+    "filter_pending": "Pending",
+    "filter_resolved": "Resolved",
+    "severity_low": "Low",
+    "severity_medium": "Medium",
+    "severity_high": "High",
+    "rule_consecutive_same_type": "Consecutive same-type check-ins",
+    "rule_impossible_travel": "Impossible travel between branches",
+    "rule_missing_biometric": "Check-in without biometric verification",
+    "resolve": "Mark as resolved",
+    "reopen": "Reopen",
+    "pending_badge": "Pending",
+    "resolved_badge": "Resolved",
+    "no_flags": "No signals registered",
+    "detected_at": "Detected on",
+    "gap_detail": "Actual gap: {gap} min (threshold: {threshold} min)",
+    "employee_unknown": "Unknown employee"
   }
 }
