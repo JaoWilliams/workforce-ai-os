@@ -120,5 +120,30 @@
     "detected_at": "Detected on",
     "gap_detail": "Actual gap: {gap} min (threshold: {threshold} min)",
     "employee_unknown": "Unknown employee"
+  },
+  "attendance": {
+    "title": "Attendance / Check-in",
+    "subtitle": "Check-in/check-out records. The system intentionally allows marking on any device — so the Operational Trust Engine™ can detect impossible patterns in real time.",
+    "new_record": "New check-in",
+    "employee": "Employee",
+    "device": "Device",
+    "type": "Type",
+    "type_entrada": "Check-in",
+    "type_salida": "Check-out",
+    "verification_method": "Verification method",
+    "method_facial": "Facial",
+    "method_fingerprint": "Fingerprint",
+    "method_card": "Card",
+    "method_manual": "Manual",
+    "recorded_at": "Date and time",
+    "biometric_enrollment": "Biometric enrollment (optional)",
+    "select_employee": "Select employee",
+    "select_device": "Select device",
+    "select_enrollment": "None",
+    "create": "Record check-in",
+    "created_ok": "Check-in recorded successfully",
+    "no_records": "No check-ins registered",
+    "simulated_badge": "SIMULATED",
+    "go_to_confianza": "View Operational Trust →"
   }
 }

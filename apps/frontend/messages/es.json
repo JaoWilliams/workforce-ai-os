@@ -120,5 +120,30 @@
     "detected_at": "Detectado el",
     "gap_detail": "Diferencia real: {gap} min (umbral: {threshold} min)",
     "employee_unknown": "Empleado desconocido"
+  },
+  "attendance": {
+    "title": "Marcación / Asistencia",
+    "subtitle": "Registro de entradas y salidas. El sistema permite marcar en cualquier dispositivo a propósito — así el Motor de Confianza Operativa™ puede detectar patrones imposibles en tiempo real.",
+    "new_record": "Nueva marcación",
+    "employee": "Empleado",
+    "device": "Dispositivo",
+    "type": "Tipo",
+    "type_entrada": "Entrada",
+    "type_salida": "Salida",
+    "verification_method": "Método de verificación",
+    "method_facial": "Facial",
+    "method_fingerprint": "Huella",
+    "method_card": "Tarjeta",
+    "method_manual": "Manual",
+    "recorded_at": "Fecha y hora",
+    "biometric_enrollment": "Enrolamiento biométrico (opcional)",
+    "select_employee": "Seleccioná empleado",
+    "select_device": "Seleccioná dispositivo",
+    "select_enrollment": "Ninguno",
+    "create": "Registrar marcación",
+    "created_ok": "Marcación registrada correctamente",
+    "no_records": "No hay marcaciones registradas",
+    "simulated_badge": "SIMULADO",
+    "go_to_confianza": "Ver Confianza Operativa →"
   }
 }
