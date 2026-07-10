@@ -11,9 +11,10 @@ from app.core.i18n import get_locale, translate
 from app.core.payroll import build_payroll_pdf, build_payroll_xlsx, compute_payroll_rows
 from app.core.overtime import generate_overtime_candidates
 from app.core.renta import compute_net_payroll_rows
+from app.core.vacations import compute_request_days_count, compute_vacation_balance
 from app.core.tenant import tenant_session
 from app.db.base import async_session
-from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User
+from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User, VacationRequest
 from app.modules.payroll.schemas import (
     PayrollPeriodCreate,
     PayrollPeriodGenerateRequest,
@@ -26,6 +27,10 @@ from app.modules.payroll.schemas import (
     OvertimeGenerateResponse,
     OvertimeStatusUpdate,
     NetPayrollRow,
+    VacationBalanceResponse,
+    VacationRequestCreate,
+    VacationRequestResponse,
+    VacationStatusUpdate,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -356,3 +361,105 @@ async def get_net_payroll(
             raise HTTPException(status_code=404, detail=translate("payroll.period_not_found", locale))
         rows = await compute_net_payroll_rows(session, current_user.tenant_id, period, branch_id)
     return rows
+
+
+def _vacation_response(v: VacationRequest, employee: Employee) -> VacationRequestResponse:
+    return VacationRequestResponse(
+        id=v.id, employee_id=v.employee_id, employee_name=f"{employee.first_name} {employee.last_name}",
+        start_date=v.start_date, end_date=v.end_date, days_count=float(v.days_count),
+        status=v.status, reviewed_by=v.reviewed_by, reviewed_at=v.reviewed_at, notes=v.notes,
+    )
+
+
+@router.post("/vacations/request", response_model=VacationRequestResponse, status_code=201)
+async def request_vacation(
+    payload: VacationRequestCreate,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.end_date < payload.start_date:
+        raise HTTPException(status_code=400, detail=translate("payroll.vacation_invalid_range", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        emp_result = await session.execute(select(Employee).where(Employee.id == payload.employee_id))
+        employee = emp_result.scalar_one_or_none()
+        if employee is None:
+            raise HTTPException(status_code=404, detail=translate("employees.not_found", locale))
+        days_count = await compute_request_days_count(session, payload.employee_id, payload.start_date, payload.end_date)
+        if days_count is None:
+            raise HTTPException(status_code=400, detail=translate("payroll.vacation_no_shift", locale))
+        vac = VacationRequest(
+            id=uuid4(), tenant_id=current_user.tenant_id, employee_id=payload.employee_id,
+            start_date=payload.start_date, end_date=payload.end_date, days_count=days_count, status="pending",
+        )
+        session.add(vac)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="vacation.requested", resource_type="vacation_request", resource_id=vac.id,
+            extra={"employee_id": str(payload.employee_id), "days_count": days_count},
+        )
+        await session.commit()
+        await session.refresh(vac)
+    return _vacation_response(vac, employee)
+
+
+@router.get("/vacations", response_model=list[VacationRequestResponse])
+async def list_vacations(
+    employee_id: Optional[UUID] = None,
+    status: Optional[str] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        query = select(VacationRequest, Employee).join(Employee, Employee.id == VacationRequest.employee_id)
+        if employee_id is not None:
+            query = query.where(VacationRequest.employee_id == employee_id)
+        if status is not None:
+            query = query.where(VacationRequest.status == status)
+        result = await session.execute(query.order_by(VacationRequest.start_date.desc()))
+        rows = result.all()
+    return [_vacation_response(v, e) for v, e in rows]
+
+
+@router.patch("/vacations/{vacation_id}/status", response_model=VacationRequestResponse)
+async def update_vacation_status(
+    vacation_id: UUID,
+    payload: VacationStatusUpdate,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.status not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail=translate("payroll.vacation_invalid_status", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(VacationRequest, Employee)
+            .join(Employee, Employee.id == VacationRequest.employee_id)
+            .where(VacationRequest.id == vacation_id)
+        )
+        row = result.first()
+        if row is None:
+            raise HTTPException(status_code=404, detail=translate("payroll.vacation_not_found", locale))
+        vac, employee = row
+        if vac.status != "pending":
+            raise HTTPException(status_code=400, detail=translate("payroll.vacation_not_pending", locale))
+        vac.status = payload.status
+        vac.reviewed_by = current_user.id
+        vac.reviewed_at = datetime.now(timezone.utc)
+        vac.notes = payload.notes
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=f"vacation.{payload.status}", resource_type="vacation_request", resource_id=vac.id,
+            extra={"employee_id": str(vac.employee_id), "days_count": float(vac.days_count), "notes": payload.notes},
+        )
+        await session.commit()
+        await session.refresh(vac)
+    return _vacation_response(vac, employee)
+
+
+@router.get("/vacations/balance", response_model=VacationBalanceResponse)
+async def get_vacation_balance(
+    employee_id: UUID,
+    as_of: Optional[date] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await compute_vacation_balance(session, employee_id, as_of or date.today())
+    return VacationBalanceResponse(**result)

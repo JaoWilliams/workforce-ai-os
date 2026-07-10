@@ -1,3 +1,4 @@
+from typing import Optional
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User
+from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -20,6 +21,8 @@ from app.modules.catalogs.schemas import (
     RentaCreditsUpsert,
     TaxBracketCreate,
     TaxBracketResponse,
+    VacationConfigResponse,
+    VacationConfigUpsert,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -376,3 +379,40 @@ async def list_renta_credits(
         result = await session.execute(select(RentaCredits).order_by(RentaCredits.year))
         rows = result.scalars().all()
     return [RentaCreditsResponse(year=r.year, spouse_credit=float(r.spouse_credit), child_credit=float(r.child_credit)) for r in rows]
+
+
+@hours_router.put("/vacation-config", response_model=VacationConfigResponse)
+async def upsert_vacation_config(
+    payload: VacationConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(VacationConfig))
+        config = result.scalars().first()
+        if config is None:
+            config = VacationConfig(id=uuid4(), tenant_id=current_user.tenant_id, cycle_weeks=payload.cycle_weeks)
+            session.add(config)
+            action = "vacation_config.created"
+        else:
+            config.cycle_weeks = payload.cycle_weeks
+            action = "vacation_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="vacation_config", resource_id=None,
+            extra={"cycle_weeks": payload.cycle_weeks},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return VacationConfigResponse(cycle_weeks=float(config.cycle_weeks))
+
+
+@hours_router.get("/vacation-config", response_model=Optional[VacationConfigResponse])
+async def get_vacation_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(VacationConfig))
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return VacationConfigResponse(cycle_weeks=float(config.cycle_weeks))

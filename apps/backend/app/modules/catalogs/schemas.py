@@ -89,3 +89,11 @@ class RentaCreditsResponse(BaseModel):
     year: int
     spouse_credit: float
     child_credit: float
+
+
+class VacationConfigUpsert(BaseModel):
+    cycle_weeks: float
+
+
+class VacationConfigResponse(BaseModel):
+    cycle_weeks: float

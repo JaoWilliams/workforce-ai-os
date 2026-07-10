@@ -28,6 +28,10 @@ class PayrollRow(BaseModel):
     holiday_unworked_pay: Optional[float] = None
     holiday_worked_surcharge: Optional[float] = None
     holiday_concept_missing: bool = False
+    vacation_pay: Optional[float] = None
+    vacation_pending: bool = False
+    vacation_no_history: bool = False
+    vacation_partial_history: bool = False
 
 
 class PayrollPeriodCreate(BaseModel):
@@ -109,3 +113,38 @@ class NetPayrollRow(PayrollRow):
     tax_brackets_missing: bool = False
     renta_credits_missing: bool = False
     renta_period_pairing_missing: bool = False
+
+
+class VacationRequestCreate(BaseModel):
+    employee_id: UUID
+    start_date: date
+    end_date: date
+
+
+class VacationRequestResponse(BaseModel):
+    id: UUID
+    employee_id: UUID
+    employee_name: str
+    start_date: date
+    end_date: date
+    days_count: float
+    status: str
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class VacationStatusUpdate(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
+
+class VacationBalanceResponse(BaseModel):
+    blocked: bool
+    reason: Optional[str] = None
+    accrued_days: Optional[float] = None
+    taken_days: Optional[float] = None
+    pending_days: Optional[float] = None
+    available_days: Optional[float] = None
+    days_per_week_worked: Optional[int] = None
+    cycle_weeks: Optional[float] = None

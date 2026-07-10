@@ -288,6 +288,55 @@ class RentaCredits(Base):
     )
 
 
+class VacationConfig(Base):
+    """Configuracion de vacaciones por tenant (Codigo de Trabajo CR, Art. 153
+    y 157). cycle_weeks = largo del ciclo legal (2 semanas de derecho por
+    cada cycle_weeks semanas trabajadas continuas) - 50 es el valor legal
+    confirmado (no placeholder), pero se deja parametrizable por si cambia
+    por reforma legal futura. Los DIAS de vacacion por ciclo NO se guardan
+    aqui como numero fijo: se derivan del turno real de cada empleado
+    (2 x dias_laborables_semana del ShiftTemplate asignado - ver
+    core/vacations.py), porque un 6x1 acumula 12 dias/ciclo y un 5x2
+    acumula 10, aunque el derecho legal (2 semanas) es el mismo."""
+    __tablename__ = "vacation_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    cycle_weeks: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_vacation_config_tenant"),
+    )
+
+
+class VacationRequest(Base):
+    """Solicitud de vacaciones. days_count se calcula UNA vez al crear la
+    solicitud (dias del rango que caen en dia laborable segun el turno del
+    empleado en ese momento - Art. 153: la unidad legal es la semana, los
+    dias son la conversion administrativa). Requiere aprobacion de un
+    supervisor antes de contar en el pago de nomina (mismo patron que
+    OvertimeApproval): mientras haya una solicitud pending que se traslape
+    con el periodo de planilla, el bruto de ese empleado queda bloqueado
+    en ese periodo. El monto a pagar (Art. 157: promedio de salario
+    ordinario + extraordinario) se calcula en el momento del calculo de
+    planilla, no se guarda aqui - ver core/vacations.py."""
+    __tablename__ = "vacation_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    days_count: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    # pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
 class Device(Base):
     __tablename__ = "devices"
 

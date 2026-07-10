@@ -32,6 +32,7 @@ from sqlalchemy import select
 
 from app.core.attendance_report import BROWN, CREAM, ORANGE, _Bookmark, _build_header_logos, compute_report_rows
 from app.core.holidays import compute_holiday_adjustments
+from app.core.vacations import compute_vacation_adjustments
 from app.db.models import Contract, OvertimeApproval, PayrollConcept, PayrollHoursConfig
 
 
@@ -76,6 +77,8 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
     )
     holiday_concept = holiday_concept_result.scalar_one_or_none()
     holiday_factor = float(holiday_concept.value) if holiday_concept else None
+
+    vacation_adjustments = await compute_vacation_adjustments(session, employee_ids, start_date, end_date, branch_id)
 
     payroll_rows = []
     for r in hours_rows:
@@ -140,6 +143,23 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
                     row["holiday_worked_surcharge"] = h_surcharge
                     if row["gross_pay"] is not None:
                         row["gross_pay"] = round(row["gross_pay"] + h_surcharge, 2)
+        vac_entry = vacation_adjustments.get(r["employee_id"])
+        row["vacation_pay"] = None
+        row["vacation_pending"] = False
+        row["vacation_no_history"] = False
+        row["vacation_partial_history"] = False
+        if vac_entry:
+            row["vacation_pending"] = vac_entry["vacation_pending"]
+            row["vacation_no_history"] = vac_entry["vacation_no_history"]
+            row["vacation_partial_history"] = vac_entry["vacation_partial_history"]
+            if vac_entry["vacation_pending"]:
+                row["gross_pay"] = None
+            elif row["gross_pay"] is not None:
+                if vac_entry["vacation_no_history"]:
+                    row["gross_pay"] = None
+                elif vac_entry["vacation_pay"] > 0:
+                    row["vacation_pay"] = vac_entry["vacation_pay"]
+                    row["gross_pay"] = round(row["gross_pay"] + vac_entry["vacation_pay"], 2)
         payroll_rows.append(row)
 
     payroll_rows.sort(key=lambda x: x["employee_name"])
