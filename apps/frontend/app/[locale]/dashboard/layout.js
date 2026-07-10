@@ -5,20 +5,30 @@ import { useRouter, usePathname, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getSession, clearSession } from "../../../lib/api";
 import { ToastProvider } from "../../../lib/toast";
+import { PermissionsProvider, usePermissions } from "../../../lib/permissions";
 
 const NAV_ITEMS = [
-  { key: "dashboard", href: "" },
-  { key: "employees", href: "/empleados" },
-  { key: "branches", href: "/sucursales" },
-  { key: "devices", href: "/dispositivos" },
-  { key: "shifts", href: "/turnos" },
-  { key: "feature_flags", href: "/feature-flags" },
-  { key: "attendance", href: "/marcacion" },
-  { key: "confianza", href: "/confianza" },
-  { key: "exceptions", href: "/excepciones" },
+  { key: "dashboard", href: "", permission: null },
+  { key: "employees", href: "/empleados", permission: "employees.view" },
+  { key: "branches", href: "/sucursales", permission: "branches.view" },
+  { key: "devices", href: "/dispositivos", permission: "devices.view" },
+  { key: "shifts", href: "/turnos", permission: "shifts.view" },
+  { key: "feature_flags", href: "/feature-flags", permission: "feature_flags.view" },
+  { key: "attendance", href: "/marcacion", permission: "attendance.view" },
+  { key: "confianza", href: "/confianza", permission: "confianza.view" },
+  { key: "exceptions", href: "/excepciones", permission: "exceptions.view" },
+  { key: "usuarios_roles", href: "/usuarios-roles", permission: "users.view" },
 ];
 
 export default function DashboardLayout({ children }) {
+  return (
+    <PermissionsProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </PermissionsProvider>
+  );
+}
+
+function DashboardShell({ children }) {
   const t = useTranslations("nav");
   const router = useRouter();
   const pathname = usePathname();
@@ -26,6 +36,7 @@ export default function DashboardLayout({ children }) {
   const locale = params.locale;
   const [session, setSession] = useState(null);
   const [checked, setChecked] = useState(false);
+  const { hasPermission, loading: permissionsLoading } = usePermissions();
 
   useEffect(() => {
     const s = getSession();
@@ -47,7 +58,9 @@ export default function DashboardLayout({ children }) {
     router.push(`/${newLocale}/${rest}`);
   }
 
-  if (!checked || !session) return null;
+  if (!checked || !session || permissionsLoading) return null;
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.permission || hasPermission(item.permission));
 
   return (
     <ToastProvider>
@@ -60,7 +73,7 @@ export default function DashboardLayout({ children }) {
           <p className="text-xs text-bk-cream/60 mt-1 uppercase tracking-wide">{session.tenant_slug}</p>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const href = "/" + locale + "/dashboard" + item.href;
             const active = pathname === href;
             return (
