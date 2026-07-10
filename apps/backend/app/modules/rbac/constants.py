@@ -24,4 +24,5 @@ ALL_PERMISSIONS = [
     "exceptions.view",
     "shifts.manage",
     "shifts.view",
+    "payroll.view",
 ]

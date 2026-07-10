@@ -41,5 +41,7 @@
   "auth.invalid_role": "The selected role is not valid",
   "auth.cannot_deactivate_self": "You cannot deactivate your own account",
   "rbac.role_not_found": "Role not found",
-  "rbac.has_active_users": "Cannot deactivate: the role has active users assigned"
+  "rbac.has_active_users": "Cannot deactivate: the role has active users assigned",
+  "catalogs.invalid_pay_frequency": "Invalid pay frequency",
+  "catalogs.invalid_standard_hours": "Standard hours must be greater than zero"
 }

@@ -19,7 +19,8 @@
     "shifts": "Shifts",
     "branches": "Branches",
     "usuarios_roles": "Users and Roles",
-    "reports": "Reports"
+    "reports": "Reports",
+    "payroll": "Payroll"
   },
   "dashboard": {
     "welcome_title": "Welcome to WORKFORCE AI",
@@ -93,7 +94,13 @@
     "contract_created_ok_toast": "Contract created for {name}",
     "deactivate_employee": "Deactivate",
     "reactivate_employee": "Reactivate",
-    "search_placeholder": "Search by name, ID or position..."
+    "search_placeholder": "Search by name, ID or position...",
+    "pay_frequency": "Pay frequency",
+    "pay_frequency_semanal": "Weekly",
+    "pay_frequency_quincenal": "Biweekly (twice a month)",
+    "pay_frequency_bisemanal": "Biweekly (every 2 weeks)",
+    "pay_frequency_mensual": "Monthly",
+    "pay_frequency_hint": "Defines how the salary is interpreted to calculate the hourly rate for payroll."
   },
   "devices": {
     "title": "Devices",
@@ -416,5 +423,40 @@
     "no_data": "No attendance records in the selected range",
     "total_label": "TOTAL",
     "col_accounting_account": "Accounting Account"
+  },
+  "payroll": {
+    "title": "Gross Payroll",
+    "hours_config_title": "Standard Hours Configuration",
+    "hours_config_hint": "Enter the real standard hours for each pay frequency, verified with your accountant or legal advisor. While a frequency is unconfigured, the system will not calculate gross pay for those contracts.",
+    "freq_semanal": "Weekly",
+    "freq_quincenal": "Biweekly (twice a month)",
+    "freq_bisemanal": "Biweekly (every 2 weeks)",
+    "freq_mensual": "Monthly",
+    "standard_hours_label": "Standard hours",
+    "not_configured": "Not configured",
+    "save": "Save",
+    "hours_saved_toast": "Hours configured successfully",
+    "start_date": "Start date",
+    "end_date": "End date",
+    "branch": "Branch",
+    "all_branches": "All branches",
+    "search_placeholder": "Search employee or branch...",
+    "col_employee": "Employee",
+    "col_branch": "Branch",
+    "col_accounting_account": "Accounting Account",
+    "col_frequency": "Frequency",
+    "col_base_salary": "Base salary",
+    "col_hours": "Hours",
+    "col_hourly_rate": "Hourly rate",
+    "col_gross": "Gross",
+    "no_contract": "No contract",
+    "config_pending": "Configuration pending",
+    "total_label": "TOTAL",
+    "export_excel": "Export Excel",
+    "export_pdf": "Export PDF",
+    "export_ok_toast": "Payroll downloaded successfully",
+    "no_data": "No data in the selected range",
+    "missing_contract_warning": "{count} employee(s) without a registered contract",
+    "missing_config_warning": "{count} employee(s) with a pay frequency missing hours configuration"
   }
 }

@@ -19,7 +19,8 @@
     "shifts": "Turnos",
     "branches": "Sucursales",
     "usuarios_roles": "Usuarios y Roles",
-    "reports": "Reportes"
+    "reports": "Reportes",
+    "payroll": "Nómina"
   },
   "dashboard": {
     "welcome_title": "Bienvenido a WORKFORCE AI",
@@ -93,7 +94,13 @@
     "contract_created_ok_toast": "Contrato creado para {name}",
     "deactivate_employee": "Desactivar",
     "reactivate_employee": "Reactivar",
-    "search_placeholder": "Buscar por nombre, cédula o puesto..."
+    "search_placeholder": "Buscar por nombre, cédula o puesto...",
+    "pay_frequency": "Frecuencia de pago",
+    "pay_frequency_semanal": "Semanal",
+    "pay_frequency_quincenal": "Quincenal",
+    "pay_frequency_bisemanal": "Bisemanal",
+    "pay_frequency_mensual": "Mensual",
+    "pay_frequency_hint": "Define cómo se interpreta el salario para calcular la tarifa por hora en la nómina."
   },
   "devices": {
     "title": "Dispositivos",
@@ -416,5 +423,40 @@
     "no_data": "No hay marcaciones en el rango seleccionado",
     "total_label": "TOTAL",
     "col_accounting_account": "Cuenta Contable"
+  },
+  "payroll": {
+    "title": "Nómina Bruta",
+    "hours_config_title": "Configuración de Horas Estándar",
+    "hours_config_hint": "Cargá las horas estándar reales de cada frecuencia de pago, verificadas con su contador o asesor legal. Mientras una frecuencia no esté configurada, el sistema no calculará el bruto de esos contratos.",
+    "freq_semanal": "Semanal",
+    "freq_quincenal": "Quincenal",
+    "freq_bisemanal": "Bisemanal",
+    "freq_mensual": "Mensual",
+    "standard_hours_label": "Horas estándar",
+    "not_configured": "Sin configurar",
+    "save": "Guardar",
+    "hours_saved_toast": "Horas configuradas correctamente",
+    "start_date": "Fecha inicio",
+    "end_date": "Fecha fin",
+    "branch": "Sucursal",
+    "all_branches": "Todas las sucursales",
+    "search_placeholder": "Buscar empleado o sucursal...",
+    "col_employee": "Empleado",
+    "col_branch": "Sucursal",
+    "col_accounting_account": "Cuenta Contable",
+    "col_frequency": "Frecuencia",
+    "col_base_salary": "Salario base",
+    "col_hours": "Horas",
+    "col_hourly_rate": "Tarifa/hora",
+    "col_gross": "Bruto",
+    "no_contract": "Sin contrato",
+    "config_pending": "Configuración pendiente",
+    "total_label": "TOTAL",
+    "export_excel": "Exportar Excel",
+    "export_pdf": "Exportar PDF",
+    "export_ok_toast": "Nómina descargada correctamente",
+    "no_data": "No hay datos en el rango seleccionado",
+    "missing_contract_warning": "{count} empleado(s) sin contrato registrado",
+    "missing_config_warning": "{count} empleado(s) con frecuencia de pago sin horas configuradas"
   }
 }

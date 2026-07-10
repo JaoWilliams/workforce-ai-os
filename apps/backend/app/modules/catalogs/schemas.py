@@ -28,3 +28,12 @@ class PayrollConceptResponse(BaseModel):
     origin: str
     value: float
     active: bool
+
+
+class PayrollHoursConfigUpsert(BaseModel):
+    standard_hours: float
+
+
+class PayrollHoursConfigResponse(BaseModel):
+    pay_frequency: str
+    standard_hours: Optional[float] = None

@@ -104,6 +104,30 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
+class PayrollHoursConfig(Base):
+    """
+    Horas estándar por período de pago, PARAMETRIZABLE por tenant — nunca un
+    valor por defecto inventado por el sistema. El cliente (vía su contador/
+    asesor legal) debe cargar explícitamente cuántas horas representa cada
+    frecuencia de pago (semanal | quincenal | bisemanal | mensual) según su
+    jurisdicción y política interna real. Si una frecuencia no tiene fila
+    aquí, core/payroll.py NO calcula el bruto para esos contratos — lo marca
+    como "configuración pendiente" en vez de asumir un número.
+    """
+    __tablename__ = "payroll_hours_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    # semanal | quincenal | bisemanal | mensual
+    pay_frequency: Mapped[str] = mapped_column(String(20), nullable=False)
+    standard_hours: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "pay_frequency", name="uq_payroll_hours_config_tenant_freq"),
+    )
+
+
 class PayrollConcept(Base):
     __tablename__ = "payroll_concepts"
 
@@ -181,6 +205,10 @@ class Contract(Base):
     base_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     # CRC | USD | GTQ | HNL | NIO | PAB (multimoneda, ver sección 4 del doc maestro)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="CRC")
+    # semanal | quincenal | bisemanal | mensual — define qué representa base_salary
+    # (el monto de UN período de pago, no necesariamente mensual) y el divisor de
+    # horas usado para derivar la tarifa por hora en la nómina bruta (core/payroll.py).
+    pay_frequency: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'mensual'"))
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 

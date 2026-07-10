@@ -41,5 +41,7 @@
   "auth.invalid_role": "El rol seleccionado no es válido",
   "auth.cannot_deactivate_self": "No podés desactivar tu propia cuenta",
   "rbac.role_not_found": "Rol no encontrado",
-  "rbac.has_active_users": "No se puede desactivar: el rol tiene usuarios activos asignados"
+  "rbac.has_active_users": "No se puede desactivar: el rol tiene usuarios activos asignados",
+  "catalogs.invalid_pay_frequency": "Frecuencia de pago inválida",
+  "catalogs.invalid_standard_hours": "Las horas estándar deben ser mayores a cero"
 }

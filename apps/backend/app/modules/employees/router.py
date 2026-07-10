@@ -33,7 +33,7 @@ def _contract_response(c: Contract) -> ContractResponse:
     return ContractResponse(
         id=c.id, employee_id=c.employee_id, contract_type=c.contract_type,
         start_date=c.start_date, end_date=c.end_date, base_salary=float(c.base_salary),
-        currency=c.currency, pdf_path=c.pdf_path,
+        currency=c.currency, pay_frequency=c.pay_frequency, pdf_path=c.pdf_path,
     )
 
 
@@ -147,6 +147,7 @@ async def create_contract(
             end_date=payload.end_date,
             base_salary=payload.base_salary,
             currency=payload.currency,
+            pay_frequency=payload.pay_frequency,
             pdf_path=None,
         )
         session.add(contract)
@@ -159,7 +160,8 @@ async def create_contract(
             session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
             action="contract.created", resource_type="contract", resource_id=contract.id,
             extra={"contract_type": payload.contract_type, "base_salary": payload.base_salary,
-                   "currency": payload.currency, "employee_id": str(employee_id), "pdf_generated": True},
+                   "currency": payload.currency, "pay_frequency": payload.pay_frequency,
+                   "employee_id": str(employee_id), "pdf_generated": True},
         )
         await session.commit()
         await session.refresh(contract)

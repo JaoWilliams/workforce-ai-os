@@ -44,6 +44,7 @@ class ContractCreate(BaseModel):
     end_date: Optional[date] = None
     base_salary: float
     currency: Literal["CRC", "USD", "GTQ", "HNL", "NIO", "PAB"] = "CRC"
+    pay_frequency: Literal["semanal", "quincenal", "bisemanal", "mensual"] = "mensual"
 
 
 class ContractResponse(BaseModel):
@@ -54,4 +55,5 @@ class ContractResponse(BaseModel):
     end_date: Optional[date] = None
     base_salary: float
     currency: str
+    pay_frequency: str
     pdf_path: Optional[str] = None

@@ -9,6 +9,7 @@ import { usePermissions } from "../../../../lib/permissions";
 const ID_TYPES = ["cedula_fisica", "cedula_juridica", "dimex", "pasaporte"];
 const CONTRACT_TYPES = ["indefinido", "plazo_fijo", "por_obra"];
 const CURRENCIES = ["CRC", "USD", "GTQ", "HNL", "NIO", "PAB"];
+const PAY_FREQUENCIES = ["semanal", "quincenal", "bisemanal", "mensual"];
 
 const emptyForm = {
   branch_id: "",
@@ -28,6 +29,7 @@ const emptyContractForm = {
   end_date: "",
   base_salary: "",
   currency: "CRC",
+  pay_frequency: "mensual",
 };
 
 export default function EmpleadosPage() {
@@ -132,6 +134,12 @@ export default function EmpleadosPage() {
     return translated === key ? type : translated;
   }
 
+  function payFrequencyLabel(freq) {
+    const key = "pay_frequency_" + freq;
+    const translated = t(key);
+    return translated === key ? freq : translated;
+  }
+
   function idTypeLabel(type) {
     const key = "id_type_" + type;
     const translated = t(key);
@@ -213,6 +221,7 @@ export default function EmpleadosPage() {
         end_date: contractForm.end_date || null,
         base_salary: parseFloat(contractForm.base_salary),
         currency: contractForm.currency,
+        pay_frequency: contractForm.pay_frequency,
       };
       await apiFetch("/api/employees/" + selected.id + "/contracts", {
         method: "POST",
@@ -381,7 +390,7 @@ export default function EmpleadosPage() {
                           {t("start_date")}: {c.start_date} · {t("end_date")}: {c.end_date || t("no_end_date")}
                         </p>
                         <p className="text-bk-brown/70 mb-3">
-                          {t("base_salary")}: {formatMoney(c.base_salary, c.currency)}
+                          {t("base_salary")}: {formatMoney(c.base_salary, c.currency)} · {t("pay_frequency")}: {payFrequencyLabel(c.pay_frequency)}
                         </p>
                         <button
                           onClick={() => downloadPdf(c)}
@@ -463,6 +472,21 @@ export default function EmpleadosPage() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("pay_frequency")}</label>
+                      <select
+                        value={contractForm.pay_frequency}
+                        onChange={(e) => setContractForm({ ...contractForm, pay_frequency: e.target.value })}
+                        className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                      >
+                        {PAY_FREQUENCIES.map((f) => (
+                          <option key={f} value={f}>
+                            {payFrequencyLabel(f)}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-bk-brown/50 mt-1">{t("pay_frequency_hint")}</p>
                     </div>
                     <button
                       type="submit"

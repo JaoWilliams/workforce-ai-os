@@ -6,11 +6,21 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import PayrollConcept, User
-from app.modules.catalogs.schemas import PayrollConceptCreate, PayrollConceptResponse, PayrollConceptUpdate
+from app.db.models import PayrollConcept, PayrollHoursConfig, User
+from app.modules.catalogs.schemas import (
+    PayrollConceptCreate,
+    PayrollConceptResponse,
+    PayrollConceptUpdate,
+    PayrollHoursConfigResponse,
+    PayrollHoursConfigUpsert,
+)
 from app.modules.rbac.dependencies import require_permission
 
+PAY_FREQUENCIES = ["semanal", "quincenal", "bisemanal", "mensual"]
+
 router = APIRouter(prefix="/api/catalogs/concepts", tags=["catalogs"])
+
+hours_router = APIRouter(prefix="/api/catalogs", tags=["catalogs"])
 
 
 def _to_response(concept: PayrollConcept) -> PayrollConceptResponse:
@@ -124,3 +134,69 @@ async def update_concept(
         await session.commit()
         await session.refresh(concept)
     return _to_response(concept)
+
+
+@hours_router.get("/payroll-hours", response_model=list[PayrollHoursConfigResponse])
+async def list_payroll_hours_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(PayrollHoursConfig))
+        configs = {c.pay_frequency: c for c in result.scalars().all()}
+    return [
+        PayrollHoursConfigResponse(
+            pay_frequency=freq,
+            standard_hours=float(configs[freq].standard_hours) if freq in configs else None,
+        )
+        for freq in PAY_FREQUENCIES
+    ]
+
+
+@hours_router.put("/payroll-hours/{pay_frequency}", response_model=PayrollHoursConfigResponse)
+async def upsert_payroll_hours_config(
+    pay_frequency: str,
+    payload: PayrollHoursConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    if pay_frequency not in PAY_FREQUENCIES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=translate("catalogs.invalid_pay_frequency", locale),
+        )
+    if payload.standard_hours <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=translate("catalogs.invalid_standard_hours", locale),
+        )
+
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(PayrollHoursConfig).where(PayrollHoursConfig.pay_frequency == pay_frequency)
+        )
+        config = result.scalar_one_or_none()
+        if config is None:
+            config = PayrollHoursConfig(
+                id=uuid4(),
+                tenant_id=current_user.tenant_id,
+                pay_frequency=pay_frequency,
+                standard_hours=payload.standard_hours,
+            )
+            session.add(config)
+            action = "payroll_hours_config.created"
+        else:
+            config.standard_hours = payload.standard_hours
+            action = "payroll_hours_config.updated"
+
+        await log_audit(
+            session,
+            tenant_id=current_user.tenant_id,
+            actor_user_id=current_user.id,
+            action=action,
+            resource_type="payroll_hours_config",
+            resource_id=config.id,
+            extra={"pay_frequency": pay_frequency, "standard_hours": payload.standard_hours},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return PayrollHoursConfigResponse(pay_frequency=config.pay_frequency, standard_hours=float(config.standard_hours))
