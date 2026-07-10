@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Clock } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
+import { usePermissions } from "../../../../lib/permissions";
 
 const TYPES = ["entrada", "salida"];
 const METHODS = ["facial", "fingerprint", "card", "manual"];
@@ -19,7 +20,8 @@ function nowLocalInputValue() {
 }
 
 export default function MarcacionPage() {
-  const t = useTranslations("attendance");
+  const t = useTranslations("attendance");  
+  const { hasPermission } = usePermissions();
   const params = useParams();
   const locale = params.locale;
   const [searchQuery, setSearchQuery] = useState("");
@@ -178,6 +180,7 @@ export default function MarcacionPage() {
             </p>
           )}
 
+          {hasPermission("attendance.manage") && (
           <form onSubmit={handleCreate} className="space-y-3 text-sm">
             <div>
               <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("employee")}</label>
@@ -282,6 +285,7 @@ export default function MarcacionPage() {
               {t("create")}
             </button>
           </form>
+          )}
         </div>
       </div>
     </div>

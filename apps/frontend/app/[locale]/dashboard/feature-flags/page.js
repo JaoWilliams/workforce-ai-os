@@ -6,9 +6,11 @@ import { ToggleLeft } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
+import { usePermissions } from "../../../../lib/permissions";
 
 export default function FeatureFlagsPage() {
-  const t = useTranslations("feature_flags");
+  const t = useTranslations("feature_flags");  
+  const { hasPermission } = usePermissions();
   const { showToast } = useToast();
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +97,7 @@ export default function FeatureFlagsPage() {
                         >
                           {f.enabled ? t("enabled") : t("disabled")}
                         </span>
+                        {hasPermission("feature_flags.manage") && (
                         <button
                           onClick={() => handleToggle(f)}
                           disabled={toggling === f.code}
@@ -112,6 +115,7 @@ export default function FeatureFlagsPage() {
                             }
                           />
                         </button>
+                        )}
                       </div>
                     </li>
                   ))}

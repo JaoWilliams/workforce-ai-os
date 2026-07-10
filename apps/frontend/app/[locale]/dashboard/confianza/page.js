@@ -6,9 +6,11 @@ import { ShieldAlert } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
+import { usePermissions } from "../../../../lib/permissions";
 
 export default function ConfianzaPage() {
-  const t = useTranslations("confianza");
+  const t = useTranslations("confianza");  
+  const { hasPermission } = usePermissions();
   const { showToast } = useToast();
   const [flags, setFlags] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -168,6 +170,7 @@ export default function ConfianzaPage() {
                       {employeeName(f.employee_id)} · {t("detected_at")}: {f.detected_at}
                     </p>
                   </div>
+                  {hasPermission("confianza.manage") && (
                   <button
                     onClick={() => handleResolveToggle(f)}
                     disabled={resolvingId === f.id}
@@ -184,6 +187,7 @@ export default function ConfianzaPage() {
                   >
                     {f.resolved ? t("reopen") : t("resolve")}
                   </button>
+                  )}
                 </div>
                 {f.details && f.details.reason && (
                   <p className="text-sm text-bk-brown/80 mt-2">{f.details.reason}</p>

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
+import { usePermissions } from "../../../../lib/permissions";
 
 const emptyCreateForm = { code: "", name: "" };
 
 export default function SucursalesPage() {
-  const t = useTranslations("branches");
+  const t = useTranslations("branches");  
+  const { hasPermission } = usePermissions();
   const { showToast } = useToast();
 
   const [branches, setBranches] = useState([]);
@@ -202,6 +204,7 @@ export default function SucursalesPage() {
 
           <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 p-5">
             <h2 className="font-heading font-bold text-bk-brown mb-4">{t("new_branch")}</h2>
+            {hasPermission("branches.manage") && (
             <form onSubmit={handleCreate} className="space-y-3 text-sm">
               <div>
                 <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("code")}</label>
@@ -230,6 +233,7 @@ export default function SucursalesPage() {
                 {t("create_branch")}
               </button>
             </form>
+            )}
           </div>
         </div>
 
@@ -241,6 +245,7 @@ export default function SucursalesPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-heading font-bold text-bk-brown">{t("edit_branch")}</h2>
+                  {hasPermission("branches.manage") && (
                   <button
                     onClick={handleToggleActive}
                     className={
@@ -251,8 +256,10 @@ export default function SucursalesPage() {
                   >
                     {selected.active ? t("deactivate_branch") : t("reactivate_branch")}
                   </button>
+                  )}
                 </div>
 
+                {hasPermission("branches.manage") && (
                 <form onSubmit={handleUpdate} className="space-y-3 text-sm">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -309,6 +316,7 @@ export default function SucursalesPage() {
                     {t("save_changes")}
                   </button>
                 </form>
+                )}
               </div>
 
               <div className="border-t border-bk-brown/10 pt-4">

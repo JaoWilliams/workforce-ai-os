@@ -6,6 +6,7 @@ import { ClipboardList } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
+import { usePermissions } from "../../../../lib/permissions";
 
 const TYPES = [
   "missing_checkin",
@@ -18,7 +19,8 @@ const TYPES = [
 ];
 
 export default function ExcepcionesPage() {
-  const t = useTranslations("exceptions_page");
+  const t = useTranslations("exceptions_page");  
+  const { hasPermission } = usePermissions();
   const { showToast } = useToast();
   const [exceptions, setExceptions] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -195,7 +197,7 @@ export default function ExcepcionesPage() {
                     </p>
                   )}
 
-                  {exc.status === "pending" && (
+                  {exc.status === "pending" && hasPermission("exceptions.manage") && (
                     <div className="mt-3 pt-3 border-t border-bk-brown/10 space-y-2">
                       <input
                         type="text"
@@ -240,6 +242,7 @@ export default function ExcepcionesPage() {
             <p className="text-sm text-green-700 bg-green-100 rounded-lg px-3 py-2 mb-3">{t("created_ok")}</p>
           )}
 
+          {hasPermission("exceptions.manage") && (
           <form onSubmit={handleCreate} className="space-y-3 text-sm">
             <div>
               <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("employee")}</label>
@@ -342,6 +345,7 @@ export default function ExcepcionesPage() {
               {t("create")}
             </button>
           </form>
+          )}
         </div>
       </div>
     </div>

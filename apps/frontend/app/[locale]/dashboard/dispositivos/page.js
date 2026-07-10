@@ -6,6 +6,7 @@ import { Router, Fingerprint } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
+import { usePermissions } from "../../../../lib/permissions";
 
 const BRANDS = ["tiandy", "hikvision", "zkteco"];
 const METHODS = ["facial", "fingerprint", "card", "password"];
@@ -26,7 +27,8 @@ const emptyForm = {
 };
 
 export default function DispositivosPage() {
-  const t = useTranslations("devices");
+  const t = useTranslations("devices");  
+  const { hasPermission } = usePermissions();
   const tb = useTranslations("biometrics");
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -326,6 +328,7 @@ export default function DispositivosPage() {
             {createError && (
               <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{createError}</p>
             )}
+            {hasPermission("devices.manage") && (
             <form onSubmit={handleCreateDevice} className="space-y-3 text-sm">
               <div>
                 <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("branch")}</label>
@@ -454,6 +457,7 @@ export default function DispositivosPage() {
                 {t("create")}
               </button>
             </form>
+            )}
           </div>
         </div>
 
@@ -466,6 +470,7 @@ export default function DispositivosPage() {
                 <h2 className="font-heading font-bold text-bk-brown">
                   {t("edit_device")} — {selected.brand} {selected.model}
                 </h2>
+                {hasPermission("devices.manage") && (
                 <button
                   onClick={handleToggleActive}
                   className={
@@ -476,10 +481,12 @@ export default function DispositivosPage() {
                 >
                   {selected.active ? t("deactivate_device") : t("reactivate_device")}
                 </button>
+                )}
               </div>
               {editError && (
                 <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{editError}</p>
               )}
+              {hasPermission("devices.manage") && (
               <form onSubmit={handleUpdateDevice} className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -589,6 +596,7 @@ export default function DispositivosPage() {
                   {t("save_changes")}
                 </button>
               </form>
+              )}
             </>
           )}
         </div>
@@ -661,6 +669,7 @@ export default function DispositivosPage() {
                   </div>
                 )}
               </div>
+              {hasPermission("biometrics.manage") && (
               <button
                 onClick={handleGrantConsent}
                 disabled={granting}
@@ -668,6 +677,8 @@ export default function DispositivosPage() {
               >
                 {tb("grant_consent")}
               </button>
+              )}
+              {hasPermission("biometrics.manage") && (
               <form onSubmit={handleEnroll} className="space-y-3 text-sm border-t border-bk-brown/10 pt-4">
                 <div>
                   <label className="block text-xs font-medium text-bk-brown/70 mb-1">{tb("device")}</label>
@@ -710,6 +721,7 @@ export default function DispositivosPage() {
                   {tb("enroll")}
                 </button>
               </form>
+              )}
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { apiFetch, apiFetchBlob } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
+import { usePermissions } from "../../../../lib/permissions";
 
 const ID_TYPES = ["cedula_fisica", "cedula_juridica", "dimex", "pasaporte"];
 const CONTRACT_TYPES = ["indefinido", "plazo_fijo", "por_obra"];
@@ -30,7 +31,8 @@ const emptyContractForm = {
 };
 
 export default function EmpleadosPage() {
-  const t = useTranslations("employees");
+  const t = useTranslations("employees");  
+  const { hasPermission } = usePermissions();
   const { showToast } = useToast();
 
   const [employees, setEmployees] = useState([]);
@@ -306,6 +308,7 @@ export default function EmpleadosPage() {
                 {editError && (
                   <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{editError}</p>
                 )}
+                {hasPermission("employees.manage") && (
                 <form onSubmit={handleUpdateEmployee} className="space-y-3 text-sm">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -352,6 +355,7 @@ export default function EmpleadosPage() {
                     {t("save_changes")}
                   </button>
                 </form>
+                )}
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 p-5">
@@ -396,6 +400,7 @@ export default function EmpleadosPage() {
                   {contractError && (
                     <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{contractError}</p>
                   )}
+                  {hasPermission("employees.manage") && (
                   <form onSubmit={handleCreateContract} className="space-y-3 text-sm">
                     <div>
                       <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("contract_type")}</label>
@@ -468,6 +473,7 @@ export default function EmpleadosPage() {
                       {t("new_contract")}
                     </button>
                   </form>
+                  )}
                 </div>
               </div>
             </>
@@ -482,6 +488,7 @@ export default function EmpleadosPage() {
           <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{createError}</p>
         )}
 
+        {hasPermission("employees.manage") && (
         <form onSubmit={handleCreateEmployee} className="space-y-3 text-sm">
           <div>
             <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("branch")}</label>
@@ -597,6 +604,7 @@ export default function EmpleadosPage() {
             {t("create_employee")}
           </button>
         </form>
+        )}
       </div>
     </div>
   );
