@@ -233,6 +233,61 @@ class Holiday(Base):
     )
 
 
+class Dependent(Base):
+    """Dependientes del empleado (conyuge/hijos) para el credito fiscal de
+    renta (Ley del Impuesto sobre la Renta). Se guarda fecha de nacimiento,
+    no una edad fija, para calcular "menor de 25 anos cumplidos" en el
+    momento del calculo de planilla, no un valor que se vuelva obsoleto."""
+    __tablename__ = "dependents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    # conyuge | hijo
+    relationship_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    birth_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class TaxBracket(Base):
+    """Tramos progresivos del Impuesto sobre la Renta - piso, techo, tasa,
+    por ano fiscal. Cero valores quemados: se cargan como catalogo, cambian
+    cada ano por decreto de Hacienda."""
+    __tablename__ = "tax_brackets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    year: Mapped[int] = mapped_column(nullable=False)
+    bracket_order: Mapped[int] = mapped_column(nullable=False)
+    lower_bound: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
+    upper_bound: Mapped[Optional[float]] = mapped_column(Numeric(14, 2), nullable=True)
+    rate: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "year", "bracket_order", name="uq_taxbracket_tenant_year_order"),
+    )
+
+
+class RentaCredits(Base):
+    """Creditos fijos de renta por conyuge y por hijo menor de 25 anos
+    cumplidos, por ano fiscal. Cero valores quemados."""
+    __tablename__ = "renta_credits"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    year: Mapped[int] = mapped_column(nullable=False)
+    spouse_credit: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    child_credit: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "year", name="uq_rentacredits_tenant_year"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, User
+from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -16,6 +16,10 @@ from app.modules.catalogs.schemas import (
     HolidayCreate,
     HolidayResponse,
     HolidayUpdate,
+    RentaCreditsResponse,
+    RentaCreditsUpsert,
+    TaxBracketCreate,
+    TaxBracketResponse,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -279,3 +283,96 @@ async def update_holiday(
         await session.commit()
         await session.refresh(holiday)
     return _holiday_response(holiday)
+
+
+@hours_router.post("/tax-brackets", response_model=TaxBracketResponse, status_code=201)
+async def create_tax_bracket(
+    payload: TaxBracketCreate,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        existing = await session.execute(
+            select(TaxBracket).where(TaxBracket.year == payload.year, TaxBracket.bracket_order == payload.bracket_order)
+        )
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=400, detail=translate("catalogs.tax_bracket_exists", locale))
+        bracket = TaxBracket(
+            id=uuid4(), tenant_id=current_user.tenant_id, year=payload.year, bracket_order=payload.bracket_order,
+            lower_bound=payload.lower_bound, upper_bound=payload.upper_bound, rate=payload.rate,
+        )
+        session.add(bracket)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="tax_bracket.created", resource_type="tax_bracket", resource_id=bracket.id,
+            extra={"year": payload.year, "bracket_order": payload.bracket_order, "lower_bound": payload.lower_bound,
+                   "upper_bound": payload.upper_bound, "rate": payload.rate},
+        )
+        await session.commit()
+        await session.refresh(bracket)
+    return TaxBracketResponse(
+        id=bracket.id, year=bracket.year, bracket_order=bracket.bracket_order,
+        lower_bound=float(bracket.lower_bound), upper_bound=float(bracket.upper_bound) if bracket.upper_bound is not None else None,
+        rate=float(bracket.rate),
+    )
+
+
+@hours_router.get("/tax-brackets", response_model=list[TaxBracketResponse])
+async def list_tax_brackets(
+    year: int = None,
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        query = select(TaxBracket).order_by(TaxBracket.year, TaxBracket.bracket_order)
+        if year is not None:
+            query = query.where(TaxBracket.year == year)
+        result = await session.execute(query)
+        brackets = result.scalars().all()
+    return [
+        TaxBracketResponse(
+            id=b.id, year=b.year, bracket_order=b.bracket_order,
+            lower_bound=float(b.lower_bound), upper_bound=float(b.upper_bound) if b.upper_bound is not None else None,
+            rate=float(b.rate),
+        )
+        for b in brackets
+    ]
+
+
+@hours_router.put("/renta-credits/{year}", response_model=RentaCreditsResponse)
+async def upsert_renta_credits(
+    year: int,
+    payload: RentaCreditsUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(RentaCredits).where(RentaCredits.year == year))
+        credits = result.scalar_one_or_none()
+        if credits is None:
+            credits = RentaCredits(
+                id=uuid4(), tenant_id=current_user.tenant_id, year=year,
+                spouse_credit=payload.spouse_credit, child_credit=payload.child_credit,
+            )
+            session.add(credits)
+            action = "renta_credits.created"
+        else:
+            credits.spouse_credit = payload.spouse_credit
+            credits.child_credit = payload.child_credit
+            action = "renta_credits.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="renta_credits", resource_id=credits.id,
+            extra={"year": year, "spouse_credit": payload.spouse_credit, "child_credit": payload.child_credit},
+        )
+        await session.commit()
+        await session.refresh(credits)
+    return RentaCreditsResponse(year=credits.year, spouse_credit=float(credits.spouse_credit), child_credit=float(credits.child_credit))
+
+
+@hours_router.get("/renta-credits", response_model=list[RentaCreditsResponse])
+async def list_renta_credits(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(RentaCredits).order_by(RentaCredits.year))
+        rows = result.scalars().all()
+    return [RentaCreditsResponse(year=r.year, spouse_credit=float(r.spouse_credit), child_credit=float(r.child_credit)) for r in rows]

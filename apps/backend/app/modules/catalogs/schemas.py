@@ -61,3 +61,31 @@ class HolidayResponse(BaseModel):
     name: str
     payment_type: str
     active: bool
+
+
+class TaxBracketCreate(BaseModel):
+    year: int
+    bracket_order: int
+    lower_bound: float
+    upper_bound: Optional[float] = None
+    rate: float
+
+
+class TaxBracketResponse(BaseModel):
+    id: UUID
+    year: int
+    bracket_order: int
+    lower_bound: float
+    upper_bound: Optional[float] = None
+    rate: float
+
+
+class RentaCreditsUpsert(BaseModel):
+    spouse_credit: float
+    child_credit: float
+
+
+class RentaCreditsResponse(BaseModel):
+    year: int
+    spouse_credit: float
+    child_credit: float

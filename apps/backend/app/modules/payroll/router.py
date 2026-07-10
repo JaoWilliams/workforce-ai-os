@@ -10,6 +10,7 @@ from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.payroll import build_payroll_pdf, build_payroll_xlsx, compute_payroll_rows
 from app.core.overtime import generate_overtime_candidates
+from app.core.renta import compute_net_payroll_rows
 from app.core.tenant import tenant_session
 from app.db.base import async_session
 from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User
@@ -24,6 +25,7 @@ from app.modules.payroll.schemas import (
     OvertimeGenerateRequest,
     OvertimeGenerateResponse,
     OvertimeStatusUpdate,
+    NetPayrollRow,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -338,3 +340,19 @@ async def update_overtime_status(
         await session.commit()
         await session.refresh(overtime)
     return _overtime_response(overtime, employee, branch, template)
+
+
+@router.get("/net", response_model=list[NetPayrollRow])
+async def get_net_payroll(
+    period_id: UUID,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(PayrollPeriod).where(PayrollPeriod.id == period_id))
+        period = result.scalar_one_or_none()
+        if period is None:
+            raise HTTPException(status_code=404, detail=translate("payroll.period_not_found", locale))
+        rows = await compute_net_payroll_rows(session, current_user.tenant_id, period, branch_id)
+    return rows

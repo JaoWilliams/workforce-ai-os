@@ -57,3 +57,24 @@ class ContractResponse(BaseModel):
     currency: str
     pay_frequency: str
     pdf_path: Optional[str] = None
+
+
+class DependentCreate(BaseModel):
+    relationship_type: Literal["conyuge", "hijo"]
+    name: str
+    birth_date: Optional[date] = None
+
+
+class DependentUpdate(BaseModel):
+    name: Optional[str] = None
+    birth_date: Optional[date] = None
+    active: Optional[bool] = None
+
+
+class DependentResponse(BaseModel):
+    id: UUID
+    employee_id: UUID
+    relationship_type: str
+    name: str
+    birth_date: Optional[date] = None
+    active: bool

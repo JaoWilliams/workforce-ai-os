@@ -8,10 +8,13 @@ from app.core.audit import log_audit
 from app.core.contracts_pdf import generate_contract_pdf
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import Branch, Contract, Employee, Tenant, User
+from app.db.models import Branch, Contract, Dependent, Employee, Tenant, User
 from app.modules.employees.schemas import (
     ContractCreate,
     ContractResponse,
+    DependentCreate,
+    DependentResponse,
+    DependentUpdate,
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
@@ -195,3 +198,84 @@ async def download_contract_pdf(
             raise HTTPException(status_code=404, detail=translate("employees.not_found", locale))
         pdf_path = contract.pdf_path
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"contrato_{contract_id}.pdf")
+
+
+def _dependent_response(d: Dependent) -> DependentResponse:
+    return DependentResponse(
+        id=d.id, employee_id=d.employee_id, relationship_type=d.relationship_type,
+        name=d.name, birth_date=d.birth_date, active=d.active,
+    )
+
+
+@router.post("/{employee_id}/dependents", response_model=DependentResponse, status_code=201)
+async def create_dependent(
+    employee_id: UUID,
+    payload: DependentCreate,
+    current_user: User = Depends(require_permission("employees.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.relationship_type == "hijo" and payload.birth_date is None:
+        raise HTTPException(status_code=400, detail=translate("employees.dependent_birthdate_required", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        emp_result = await session.execute(select(Employee).where(Employee.id == employee_id))
+        if emp_result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail=translate("employees.not_found", locale))
+        dependent = Dependent(
+            id=uuid4(), tenant_id=current_user.tenant_id, employee_id=employee_id,
+            relationship_type=payload.relationship_type, name=payload.name,
+            birth_date=payload.birth_date, active=True,
+        )
+        session.add(dependent)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="dependent.created", resource_type="dependent", resource_id=dependent.id,
+            extra={"employee_id": str(employee_id), "relationship_type": payload.relationship_type, "name": payload.name},
+        )
+        await session.commit()
+        await session.refresh(dependent)
+    return _dependent_response(dependent)
+
+
+@router.get("/{employee_id}/dependents", response_model=list[DependentResponse])
+async def list_dependents(
+    employee_id: UUID,
+    current_user: User = Depends(require_permission("employees.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(Dependent).where(Dependent.employee_id == employee_id))
+        dependents = result.scalars().all()
+    return [_dependent_response(d) for d in dependents]
+
+
+@router.patch("/{employee_id}/dependents/{dependent_id}", response_model=DependentResponse)
+async def update_dependent(
+    employee_id: UUID,
+    dependent_id: UUID,
+    payload: DependentUpdate,
+    current_user: User = Depends(require_permission("employees.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(Dependent).where(Dependent.id == dependent_id, Dependent.employee_id == employee_id)
+        )
+        dependent = result.scalar_one_or_none()
+        if dependent is None:
+            raise HTTPException(status_code=404, detail=translate("employees.dependent_not_found", locale))
+        changes = {}
+        if payload.name is not None:
+            dependent.name = payload.name
+            changes["name"] = payload.name
+        if payload.birth_date is not None:
+            dependent.birth_date = payload.birth_date
+            changes["birth_date"] = str(payload.birth_date)
+        if payload.active is not None:
+            dependent.active = payload.active
+            changes["active"] = payload.active
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="dependent.updated", resource_type="dependent", resource_id=dependent.id, extra=changes,
+        )
+        await session.commit()
+        await session.refresh(dependent)
+    return _dependent_response(dependent)

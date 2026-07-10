@@ -98,3 +98,14 @@ class OvertimeApprovalResponse(BaseModel):
 class OvertimeStatusUpdate(BaseModel):
     status: str
     notes: Optional[str] = None
+
+
+class NetPayrollRow(PayrollRow):
+    ccss_deduction: Optional[float] = None
+    renta_amount: Optional[float] = None
+    renta_is_refund: bool = False
+    net_pay: Optional[float] = None
+    renta_frequency_unsupported: bool = False
+    tax_brackets_missing: bool = False
+    renta_credits_missing: bool = False
+    renta_period_pairing_missing: bool = False
