@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -20,3 +21,39 @@ class PayrollRow(BaseModel):
     hourly_rate: Optional[float] = None
     gross_pay: Optional[float] = None
     hours_config_missing: bool = False
+
+
+class PayrollPeriodCreate(BaseModel):
+    pay_frequency: str
+    period_start: date
+    period_end: date
+    pay_date: Optional[date] = None
+    notes: Optional[str] = None
+
+
+class PayrollPeriodUpdate(BaseModel):
+    period_start: Optional[date] = None
+    period_end: Optional[date] = None
+    pay_date: Optional[date] = None
+    notes: Optional[str] = None
+
+
+class PayrollPeriodStatusUpdate(BaseModel):
+    status: str
+
+
+class PayrollPeriodResponse(BaseModel):
+    id: UUID
+    pay_frequency: str
+    period_start: date
+    period_end: date
+    pay_date: Optional[date] = None
+    status: str
+    notes: Optional[str] = None
+
+
+class PayrollPeriodGenerateRequest(BaseModel):
+    pay_frequency: str
+    first_period_start: date
+    days_per_period: int
+    count: int

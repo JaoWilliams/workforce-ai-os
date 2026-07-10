@@ -25,4 +25,5 @@ ALL_PERMISSIONS = [
     "shifts.manage",
     "shifts.view",
     "payroll.view",
+    "payroll.manage",
 ]

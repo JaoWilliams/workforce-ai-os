@@ -104,6 +104,34 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
+class PayrollPeriod(Base):
+    """
+    Período de planilla (calendario de nómina). Toda corrida de nómina real
+    debe ejecutarse dentro de un período definido aquí — fechas de inicio/
+    fin/pago cargadas explícitamente por el cliente, nunca calculadas por
+    una fórmula asumida por el sistema (los feriados/fines de semana pueden
+    correr la fecha de pago real, y eso lo decide el cliente).
+    """
+    __tablename__ = "payroll_periods"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    # semanal | quincenal | bisemanal | mensual
+    pay_frequency: Mapped[str] = mapped_column(String(20), nullable=False)
+    period_start: Mapped[date] = mapped_column(Date, nullable=False)
+    period_end: Mapped[date] = mapped_column(Date, nullable=False)
+    # Null hasta que el cliente confirme la fecha real (puede correrse por feriados/fines de semana)
+    pay_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    # draft | closed | paid
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "pay_frequency", "period_start", name="uq_payroll_period_tenant_freq_start"),
+    )
+
+
 class PayrollHoursConfig(Base):
     """
     Horas estándar por período de pago, PARAMETRIZABLE por tenant — nunca un
