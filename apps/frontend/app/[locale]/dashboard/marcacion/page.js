@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
+import { Clock } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
+import { LoadingState, EmptyState } from "../../../../lib/ui";
 
 const TYPES = ["entrada", "salida"];
 const METHODS = ["facial", "fingerprint", "card", "manual"];
@@ -20,6 +22,7 @@ export default function MarcacionPage() {
   const t = useTranslations("attendance");
   const params = useParams();
   const locale = params.locale;
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [records, setRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -69,6 +72,12 @@ export default function MarcacionPage() {
     return e ? e.first_name + " " + e.last_name : id;
   }
 
+  const filteredRecords = records.filter((r) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return employeeName(r.employee_id).toLowerCase().includes(q);
+  });
+
   function deviceLabel(id) {
     const d = devices.find((x) => x.id === id);
     return d ? d.brand + " " + d.model + " (" + d.serial_number + ")" : id;
@@ -110,13 +119,22 @@ export default function MarcacionPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 overflow-hidden">
+          <div className="p-3 border-b border-bk-brown/10">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("search_placeholder")}
+              className="w-full border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm"
+            />
+          </div>
           {loading ? (
-            <p className="p-4 text-sm text-bk-brown/60">...</p>
-          ) : records.length === 0 ? (
-            <p className="p-4 text-sm text-bk-brown/60">{t("no_records")}</p>
+            <LoadingState />
+          ) : filteredRecords.length === 0 ? (
+            <EmptyState icon={Clock} message={t("no_records")} />
           ) : (
             <ul className="divide-y divide-bk-brown/10 max-h-[640px] overflow-y-auto">
-              {records.map((r) => (
+              {filteredRecords.map((r) => (
                 <li key={r.id} className="px-5 py-4">
                   <div className="flex items-center gap-2 mb-1">
                     <span

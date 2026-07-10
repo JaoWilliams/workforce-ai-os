@@ -33,7 +33,20 @@
     "activity_flag": "Operational Trust signal",
     "activity_exception": "Exception",
     "no_activity": "No recent activity",
-    "view_all": "View all"
+    "view_all": "View all",
+    "chart_checkins_trend": "Check-ins — last 14 days",
+    "chart_entrada": "Check-ins",
+    "chart_salida": "Check-outs",
+    "chart_shift_coverage": "Shift coverage",
+    "chart_assigned": "Assigned",
+    "chart_min_required": "Minimum required",
+    "chart_flags_by_rule": "Trust flags by rule",
+    "chart_employees_by_branch": "Employees by branch",
+    "rule_missing_biometric": "Missing biometric verification",
+    "rule_consecutive_same_type": "Consecutive matching check-ins",
+    "rule_impossible_travel": "Impossible travel between branches",
+    "coverage_gap_alert": "shift templates understaffed",
+    "no_data": "Not enough data yet"
   },
   "employees": {
     "title": "Employees",
@@ -106,7 +119,20 @@
     "select_branch": "Select branch",
     "select_brand": "Select brand",
     "created_ok": "Device created successfully",
-    "create_error": "Could not create device"
+    "create_error": "Could not create device",
+    "search_placeholder": "Search by brand, model, serial or branch...",
+    "status_updated_toast": "Status updated: {status}",
+    "edit_device": "Edit device",
+    "save_changes": "Save changes",
+    "select_device_prompt": "Select a device to see details",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate_device": "Deactivate",
+    "reactivate_device": "Reactivate",
+    "deactivate_confirm": "Deactivate this device? It will no longer be available for new check-ins or enrollments.",
+    "updated_ok": "Device updated",
+    "deactivated_ok_toast": "Device deactivated",
+    "reactivated_ok_toast": "Device reactivated"
   },
   "biometrics": {
     "title": "Biometric enrollment",
@@ -157,7 +183,9 @@
     "no_flags": "No signals registered",
     "detected_at": "Detected on",
     "gap_detail": "Actual gap: {gap} min (threshold: {threshold} min)",
-    "employee_unknown": "Unknown employee"
+    "employee_unknown": "Unknown employee",
+    "flag_resolved_toast": "Flag marked as resolved",
+    "flag_reopened_toast": "Flag reopened"
   },
   "attendance": {
     "title": "Attendance / Check-in",
@@ -182,7 +210,8 @@
     "created_ok": "Check-in recorded successfully",
     "no_records": "No check-ins registered",
     "simulated_badge": "SIMULATED",
-    "go_to_confianza": "View Operational Trust →"
+    "go_to_confianza": "View Operational Trust →",
+    "search_placeholder": "Search by employee..."
   },
   "exceptions_page": {
     "title": "Exceptions",
@@ -263,7 +292,20 @@
     "conflict_warning": "This employee is already assigned to another shift on overlapping dates",
     "assigned_to_toast": "{employee} assigned to {shift} ({branch})",
     "template_created_toast": "Template \"{name}\" created",
-    "coverage_checked_toast": "Coverage checked"
+    "coverage_checked_toast": "Coverage checked",
+    "search_placeholder": "Search by shift name or branch...",
+    "edit_template": "Edit template",
+    "save_changes": "Save changes",
+    "updated_ok": "Template updated successfully",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate_template": "Deactivate template",
+    "reactivate_template": "Reactivate template",
+    "deactivate_confirm": "Are you sure you want to deactivate this shift template?",
+    "deactivated_ok_toast": "Template deactivated successfully",
+    "reactivated_ok_toast": "Template reactivated successfully",
+    "has_active_assignments_error": "Cannot deactivate: the shift has employees currently or future assigned.",
+    "select_template_edit_prompt": "Select a template to edit"
   },
   "branches": {
     "title": "Branches",

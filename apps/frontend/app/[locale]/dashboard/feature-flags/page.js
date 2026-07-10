@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ToggleLeft } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
+import { useToast } from "../../../../lib/toast";
+import { LoadingState, EmptyState } from "../../../../lib/ui";
 
 export default function FeatureFlagsPage() {
   const t = useTranslations("feature_flags");
+  const { showToast } = useToast();
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,10 +37,11 @@ export default function FeatureFlagsPage() {
         method: "PATCH",
         body: JSON.stringify({ enabled: !flag.enabled, branch_id: null }),
       });
-      setMessage(t("updated_ok"));
+      showToast(t("updated_ok"));
       load();
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
     } finally {
       setToggling(null);
     }
@@ -57,14 +62,11 @@ export default function FeatureFlagsPage() {
       {error && (
         <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
-      {message && (
-        <p className="text-sm text-green-700 bg-green-100 rounded-lg px-3 py-2 mb-4">{message}</p>
-      )}
 
       {loading ? (
-        <p className="text-sm text-bk-brown/60">...</p>
+        <LoadingState />
       ) : flags.length === 0 ? (
-        <p className="text-sm text-bk-brown/60">{t("no_flags")}</p>
+        <EmptyState icon={ToggleLeft} message={t("no_flags")} />
       ) : (
         <div className="space-y-6">
           {categories.map((cat) => (

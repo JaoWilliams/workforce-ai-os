@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ClipboardList } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
+import { useToast } from "../../../../lib/toast";
+import { LoadingState, EmptyState } from "../../../../lib/ui";
 
 const TYPES = [
   "missing_checkin",
@@ -16,6 +19,7 @@ const TYPES = [
 
 export default function ExcepcionesPage() {
   const t = useTranslations("exceptions_page");
+  const { showToast } = useToast();
   const [exceptions, setExceptions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -82,9 +86,11 @@ export default function ExcepcionesPage() {
         method: "PATCH",
         body: JSON.stringify({ status: newStatus, review_notes: reviewNotesMap[exc.id] || null }),
       });
+      showToast(t("status_" + newStatus));
       load();
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
     } finally {
       setReviewingId(null);
     }
@@ -105,7 +111,7 @@ export default function ExcepcionesPage() {
         trust_flag_id: trustFlagId || null,
       };
       await apiFetch("/api/exceptions", { method: "POST", body: JSON.stringify(payload) });
-      setCreateOk(true);
+      showToast(t("created_ok"));
       setJustification("");
       setEvidenceReference("");
       setAttendanceRecordId("");
@@ -113,6 +119,7 @@ export default function ExcepcionesPage() {
       load();
     } catch (err) {
       setCreateError(err.message);
+      showToast(err.message, "error");
     } finally {
       setCreating(false);
     }
@@ -159,9 +166,9 @@ export default function ExcepcionesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           {loading ? (
-            <p className="text-sm text-bk-brown/60">...</p>
+            <LoadingState />
           ) : displayed.length === 0 ? (
-            <p className="text-sm text-bk-brown/60">{t("no_exceptions")}</p>
+            <EmptyState icon={ClipboardList} message={t("no_exceptions")} />
           ) : (
             <div className="space-y-4">
               {displayed.map((exc) => (

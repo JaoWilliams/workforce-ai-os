@@ -143,6 +143,7 @@ class Device(Base):
     max_events: Mapped[Optional[int]] = mapped_column(nullable=True)
     # ej. ["facial", "fingerprint", "card", "password"] — según lo que soporte el modelo real
     verification_methods: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
@@ -325,6 +326,7 @@ class ShiftTemplate(Base):
     # 0=lunes ... 6=domingo
     days_of_week: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     min_coverage: Mapped[int] = mapped_column(nullable=False, default=1)
+    active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 

@@ -14,6 +14,15 @@ class ShiftTemplateCreate(BaseModel):
     min_coverage: int = 1
 
 
+class ShiftTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    days_of_week: Optional[List[int]] = None
+    min_coverage: Optional[int] = None
+    active: Optional[bool] = None
+
+
 class ShiftTemplateResponse(BaseModel):
     id: UUID
     branch_id: UUID
@@ -22,6 +31,7 @@ class ShiftTemplateResponse(BaseModel):
     end_time: time
     days_of_week: List[int]
     min_coverage: int
+    active: bool
     created_at: datetime
 
 

@@ -35,5 +35,6 @@
   "shifts.employee_not_found": "Empleado no encontrado",
   "shifts.template_not_found": "Plantilla de turno no encontrada",
   "shifts.invalid_date_range": "La fecha de fin no puede ser anterior a la fecha de inicio",
-  "branches.has_active_employees": "No se puede desactivar: la sucursal tiene empleados activos asignados."
+  "branches.has_active_employees": "No se puede desactivar: la sucursal tiene empleados activos asignados.",
+  "shifts.has_active_assignments": "No se puede desactivar: el turno tiene empleados asignados actualmente o a futuro."
 }

@@ -33,7 +33,20 @@
     "activity_flag": "Señal de Confianza Operativa",
     "activity_exception": "Excepción",
     "no_activity": "Sin actividad reciente",
-    "view_all": "Ver todo"
+    "view_all": "Ver todo",
+    "chart_checkins_trend": "Marcaciones — últimos 14 días",
+    "chart_entrada": "Entradas",
+    "chart_salida": "Salidas",
+    "chart_shift_coverage": "Cobertura de turnos",
+    "chart_assigned": "Asignados",
+    "chart_min_required": "Mínimo requerido",
+    "chart_flags_by_rule": "Señales de Confianza Operativa por regla",
+    "chart_employees_by_branch": "Empleados por sucursal",
+    "rule_missing_biometric": "Sin verificación biométrica",
+    "rule_consecutive_same_type": "Marcaciones consecutivas iguales",
+    "rule_impossible_travel": "Viaje imposible entre sucursales",
+    "coverage_gap_alert": "sucursales con cobertura de turno insuficiente",
+    "no_data": "Sin datos suficientes todavía"
   },
   "employees": {
     "title": "Empleados",
@@ -106,7 +119,20 @@
     "select_branch": "Seleccioná sucursal",
     "select_brand": "Seleccioná marca",
     "created_ok": "Dispositivo creado correctamente",
-    "create_error": "No se pudo crear el dispositivo"
+    "create_error": "No se pudo crear el dispositivo",
+    "search_placeholder": "Buscar por marca, modelo, serie o sucursal...",
+    "status_updated_toast": "Estado actualizado: {status}",
+    "edit_device": "Editar dispositivo",
+    "save_changes": "Guardar cambios",
+    "select_device_prompt": "Seleccioná un dispositivo para ver el detalle",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "deactivate_device": "Desactivar",
+    "reactivate_device": "Reactivar",
+    "deactivate_confirm": "¿Desactivar este dispositivo? Dejará de estar disponible para marcaciones y enrolamientos nuevos.",
+    "updated_ok": "Dispositivo actualizado",
+    "deactivated_ok_toast": "Dispositivo desactivado",
+    "reactivated_ok_toast": "Dispositivo reactivado"
   },
   "biometrics": {
     "title": "Enrolamiento biométrico",
@@ -157,7 +183,9 @@
     "no_flags": "No hay señales registradas",
     "detected_at": "Detectado el",
     "gap_detail": "Diferencia real: {gap} min (umbral: {threshold} min)",
-    "employee_unknown": "Empleado desconocido"
+    "employee_unknown": "Empleado desconocido",
+    "flag_resolved_toast": "Señal marcada como resuelta",
+    "flag_reopened_toast": "Señal reabierta"
   },
   "attendance": {
     "title": "Marcación / Asistencia",
@@ -182,7 +210,8 @@
     "created_ok": "Marcación registrada correctamente",
     "no_records": "No hay marcaciones registradas",
     "simulated_badge": "SIMULADO",
-    "go_to_confianza": "Ver Confianza Operativa →"
+    "go_to_confianza": "Ver Confianza Operativa →",
+    "search_placeholder": "Buscar por empleado..."
   },
   "exceptions_page": {
     "title": "Excepciones",
@@ -263,7 +292,20 @@
     "conflict_warning": "Este empleado ya está asignado a otro turno en fechas que se solapan",
     "assigned_to_toast": "{employee} asignado a {shift} ({branch})",
     "template_created_toast": "Plantilla \"{name}\" creada",
-    "coverage_checked_toast": "Cobertura verificada"
+    "coverage_checked_toast": "Cobertura verificada",
+    "search_placeholder": "Buscar por nombre de turno o sucursal...",
+    "edit_template": "Editar plantilla",
+    "save_changes": "Guardar cambios",
+    "updated_ok": "Plantilla actualizada correctamente",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "deactivate_template": "Desactivar plantilla",
+    "reactivate_template": "Reactivar plantilla",
+    "deactivate_confirm": "¿Seguro que desea desactivar esta plantilla de turno?",
+    "deactivated_ok_toast": "Plantilla desactivada correctamente",
+    "reactivated_ok_toast": "Plantilla reactivada correctamente",
+    "has_active_assignments_error": "No se puede desactivar: el turno tiene empleados asignados actualmente o a futuro.",
+    "select_template_edit_prompt": "Seleccione una plantilla para editar"
   },
   "branches": {
     "title": "Sucursales",

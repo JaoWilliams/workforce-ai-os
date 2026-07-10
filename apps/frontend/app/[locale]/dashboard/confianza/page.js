@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ShieldAlert } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
+import { useToast } from "../../../../lib/toast";
+import { LoadingState, EmptyState } from "../../../../lib/ui";
 
 export default function ConfianzaPage() {
   const t = useTranslations("confianza");
+  const { showToast } = useToast();
   const [flags, setFlags] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,9 +67,11 @@ export default function ConfianzaPage() {
         method: "PATCH",
         body: JSON.stringify({ resolved: !flag.resolved }),
       });
+      showToast(flag.resolved ? t("flag_reopened_toast") : t("flag_resolved_toast"));
       load();
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
     } finally {
       setResolvingId(null);
     }
@@ -130,14 +136,11 @@ export default function ConfianzaPage() {
       {error && (
         <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
-      {message && (
-        <p className="text-sm text-green-700 bg-green-100 rounded-lg px-3 py-2 mb-4">{message}</p>
-      )}
 
       {loading ? (
-        <p className="text-sm text-bk-brown/60">...</p>
+        <LoadingState />
       ) : displayed.length === 0 ? (
-        <p className="text-sm text-bk-brown/60">{t("no_flags")}</p>
+        <EmptyState icon={ShieldAlert} message={t("no_flags")} />
       ) : (
         <div className="space-y-4">
           {displayed.map((f) => {

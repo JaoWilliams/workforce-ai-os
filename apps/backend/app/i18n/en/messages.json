@@ -35,5 +35,6 @@
   "shifts.employee_not_found": "Employee not found",
   "shifts.template_not_found": "Shift template not found",
   "shifts.invalid_date_range": "End date cannot be before start date",
-  "branches.has_active_employees": "Cannot deactivate: the branch has active employees assigned."
+  "branches.has_active_employees": "Cannot deactivate: the branch has active employees assigned.",
+  "shifts.has_active_assignments": "Cannot deactivate: the shift has employees currently or future assigned."
 }

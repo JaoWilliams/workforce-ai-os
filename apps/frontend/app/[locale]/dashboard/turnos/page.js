@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { CalendarClock } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
+import { LoadingState, EmptyState } from "../../../../lib/ui";
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6];
 
@@ -16,6 +18,7 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
 export default function TurnosPage() {
   const t = useTranslations("shifts");
   const { showToast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [templates, setTemplates] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -45,6 +48,14 @@ export default function TurnosPage() {
   const [coverageResult, setCoverageResult] = useState(null);
   const [coverageError, setCoverageError] = useState(null);
   const [checkingCoverage, setCheckingCoverage] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editDays, setEditDays] = useState({});
+  const [editMinCoverage, setEditMinCoverage] = useState(1);
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+  const [togglingActive, setTogglingActive] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -70,6 +81,12 @@ export default function TurnosPage() {
     return b ? b.name : id;
   }
 
+  const filteredTemplates = templates.filter((tpl) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return tpl.name.toLowerCase().includes(q) || branchName(tpl.branch_id).toLowerCase().includes(q);
+  });
+
   function employeeName(id) {
     const e = employees.find((x) => x.id === id);
     return e ? e.first_name + " " + e.last_name : id;
@@ -78,6 +95,26 @@ export default function TurnosPage() {
   function toggleDay(d) {
     setDays((prev) => ({ ...prev, [d]: !prev[d] }));
   }
+
+  function toggleEditDay(d) {
+    setEditDays((prev) => ({ ...prev, [d]: !prev[d] }));
+  }
+
+  useEffect(() => {
+    const tpl = templates.find((x) => x.id === selectedTemplateId);
+    if (tpl) {
+      setEditName(tpl.name);
+      setEditStartTime(tpl.start_time.slice(0, 5));
+      setEditEndTime(tpl.end_time.slice(0, 5));
+      const daysObj = {};
+      tpl.days_of_week.forEach((d) => {
+        daysObj[d] = true;
+      });
+      setEditDays(daysObj);
+      setEditMinCoverage(tpl.min_coverage);
+      setUpdateError(null);
+    }
+  }, [selectedTemplateId, templates]);
 
   const selectedTemplate = templates.find((tpl) => tpl.id === selectedTemplateId) || null;
   const templateAssignments = assignments.filter((a) => a.shift_template_id === selectedTemplateId);
@@ -123,6 +160,58 @@ export default function TurnosPage() {
       showToast(err.message, "error");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleUpdateTemplate(e) {
+    e.preventDefault();
+    setUpdating(true);
+    setUpdateError(null);
+    try {
+      const days_of_week = DAYS.filter((d) => editDays[d]);
+      const payload = {
+        name: editName,
+        start_time: editStartTime + ":00",
+        end_time: editEndTime + ":00",
+        days_of_week,
+        min_coverage: parseInt(editMinCoverage, 10) || 1,
+      };
+      await apiFetch("/api/shifts/" + selectedTemplateId, { method: "PATCH", body: JSON.stringify(payload) });
+      showToast(t("updated_ok"));
+      loadTemplates();
+    } catch (err) {
+      setUpdateError(err.message);
+      showToast(err.message, "error");
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function handleToggleActive() {
+    if (!selectedTemplate) return;
+    if (selectedTemplate.active) {
+      if (!window.confirm(t("deactivate_confirm"))) return;
+      setTogglingActive(true);
+      try {
+        await apiFetch("/api/shifts/" + selectedTemplateId, { method: "DELETE" });
+        showToast(t("deactivated_ok_toast"));
+        loadTemplates();
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        setTogglingActive(false);
+      }
+    } else {
+      setTogglingActive(true);
+      try {
+        await apiFetch("/api/shifts/" + selectedTemplateId, { method: "PATCH", body: JSON.stringify({ active: true }) });
+        showToast(t("reactivated_ok_toast"));
+        loadTemplates();
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        setTogglingActive(false);
+      }
     }
   }
 
@@ -185,23 +274,39 @@ export default function TurnosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 overflow-hidden">
+            <div className="p-3 border-b border-bk-brown/10">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("search_placeholder")}
+                className="w-full border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm"
+              />
+            </div>
             {loading ? (
-              <p className="p-4 text-sm text-bk-brown/60">...</p>
-            ) : templates.length === 0 ? (
-              <p className="p-4 text-sm text-bk-brown/60">{t("no_templates")}</p>
+              <LoadingState />
+            ) : filteredTemplates.length === 0 ? (
+              <EmptyState icon={CalendarClock} message={t("no_templates")} />
             ) : (
               <ul className="divide-y divide-bk-brown/10">
-                {templates.map((tpl) => (
+                {filteredTemplates.map((tpl) => (
                   <li key={tpl.id}>
                     <button
                       onClick={() => setSelectedTemplateId(tpl.id)}
                       className={
                         selectedTemplateId === tpl.id
-                          ? "w-full text-left px-5 py-4 transition bg-bk-orange/10"
-                          : "w-full text-left px-5 py-4 transition hover:bg-bk-cream2"
+                          ? "w-full text-left px-5 py-4 transition bg-bk-orange/10" + (tpl.active ? "" : " opacity-60")
+                          : "w-full text-left px-5 py-4 transition hover:bg-bk-cream2" + (tpl.active ? "" : " opacity-60")
                       }
                     >
-                      <p className="font-semibold text-bk-brown">{tpl.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-bk-brown">{tpl.name}</p>
+                        {!tpl.active && (
+                          <span className="inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-bk-brown/10 text-bk-brown/60">
+                            {t("inactive")}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-bk-brown/60 mt-0.5">{branchName(tpl.branch_id)}</p>
                       <p className="text-xs text-bk-brown/60 mt-0.5">
                         {tpl.start_time} - {tpl.end_time}
@@ -317,10 +422,104 @@ export default function TurnosPage() {
             <p className="text-sm text-bk-brown/60">{t("select_template_prompt")}</p>
           ) : (
             <div>
-              <h2 className="font-heading font-bold text-bk-brown mb-1">{selectedTemplate.name}</h2>
-              <p className="text-xs text-bk-brown/60 mb-4">
-                {branchName(selectedTemplate.branch_id)} · {selectedTemplate.start_time}-{selectedTemplate.end_time}
-              </p>
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-heading font-bold text-bk-brown">{t("edit_template")}</h2>
+                <span
+                  className={
+                    selectedTemplate.active
+                      ? "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700"
+                      : "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-bk-brown/10 text-bk-brown/60"
+                  }
+                >
+                  {selectedTemplate.active ? t("active") : t("inactive")}
+                </span>
+              </div>
+              <p className="text-xs text-bk-brown/60 mb-4">{branchName(selectedTemplate.branch_id)}</p>
+
+              {updateError && (
+                <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{updateError}</p>
+              )}
+
+              <form onSubmit={handleUpdateTemplate} className="space-y-3 text-sm mb-5 border-b border-bk-brown/10 pb-5">
+                <div>
+                  <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("name")}</label>
+                  <input
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("start_time")}</label>
+                    <input
+                      type="time"
+                      required
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                      className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("end_time")}</label>
+                    <input
+                      type="time"
+                      required
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("days_of_week")}</label>
+                  <div className="flex flex-wrap gap-3">
+                    {DAYS.map((d) => (
+                      <label key={d} className="flex items-center gap-1 text-xs text-bk-brown/80">
+                        <input type="checkbox" checked={!!editDays[d]} onChange={() => toggleEditDay(d)} />
+                        {t("day_" + d)}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("min_coverage")}</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editMinCoverage}
+                    onChange={(e) => setEditMinCoverage(e.target.value)}
+                    className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="text-xs font-semibold text-white rounded-lg px-4 py-2 disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}
+                  >
+                    {t("save_changes")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={togglingActive}
+                    onClick={handleToggleActive}
+                    className={
+                      selectedTemplate.active
+                        ? "text-xs font-semibold text-bk-red border border-bk-red/30 rounded-lg px-4 py-2 disabled:opacity-50"
+                        : "text-xs font-semibold text-green-700 border border-green-700/30 rounded-lg px-4 py-2 disabled:opacity-50"
+                    }
+                  >
+                    {selectedTemplate.active ? t("deactivate_template") : t("reactivate_template")}
+                  </button>
+                </div>
+              </form>
 
               <h3 className="font-heading font-semibold text-bk-brown text-sm mb-2">{t("assigned_employees")}</h3>
               {templateAssignments.length === 0 ? (
