@@ -25,6 +25,9 @@ class PayrollRow(BaseModel):
     overtime_pending: bool = False
     overtime_concept_missing: bool = False
     overtime_surcharge: Optional[float] = None
+    holiday_unworked_pay: Optional[float] = None
+    holiday_worked_surcharge: Optional[float] = None
+    holiday_concept_missing: bool = False
 
 
 class PayrollPeriodCreate(BaseModel):

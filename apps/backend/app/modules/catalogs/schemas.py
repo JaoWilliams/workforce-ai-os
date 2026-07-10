@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal, Optional
 from uuid import UUID
 
@@ -40,3 +41,23 @@ class PayrollHoursConfigUpsert(BaseModel):
 class PayrollHoursConfigResponse(BaseModel):
     pay_frequency: str
     standard_hours: Optional[float] = None
+
+
+class HolidayCreate(BaseModel):
+    date: date
+    name: str
+    payment_type: Literal["obligatorio", "no_obligatorio"]
+
+
+class HolidayUpdate(BaseModel):
+    name: Optional[str] = None
+    payment_type: Optional[Literal["obligatorio", "no_obligatorio"]] = None
+    active: Optional[bool] = None
+
+
+class HolidayResponse(BaseModel):
+    id: UUID
+    date: date
+    name: str
+    payment_type: str
+    active: bool

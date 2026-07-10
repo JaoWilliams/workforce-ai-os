@@ -6,13 +6,16 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import PayrollConcept, PayrollHoursConfig, User
+from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, User
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
     PayrollConceptUpdate,
     PayrollHoursConfigResponse,
     PayrollHoursConfigUpsert,
+    HolidayCreate,
+    HolidayResponse,
+    HolidayUpdate,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -206,3 +209,73 @@ async def upsert_payroll_hours_config(
         await session.commit()
         await session.refresh(config)
     return PayrollHoursConfigResponse(pay_frequency=config.pay_frequency, standard_hours=float(config.standard_hours))
+
+
+def _holiday_response(h: Holiday) -> HolidayResponse:
+    return HolidayResponse(id=h.id, date=h.date, name=h.name, payment_type=h.payment_type, active=h.active)
+
+
+@hours_router.post("/holidays", response_model=HolidayResponse, status_code=201)
+async def create_holiday(
+    payload: HolidayCreate,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        existing = await session.execute(select(Holiday).where(Holiday.date == payload.date))
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=400, detail=translate("catalogs.holiday_date_exists", locale))
+        holiday = Holiday(
+            id=uuid4(), tenant_id=current_user.tenant_id, date=payload.date,
+            name=payload.name, payment_type=payload.payment_type, active=True,
+        )
+        session.add(holiday)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="holiday.created", resource_type="holiday", resource_id=holiday.id,
+            extra={"date": str(payload.date), "name": payload.name, "payment_type": payload.payment_type},
+        )
+        await session.commit()
+        await session.refresh(holiday)
+    return _holiday_response(holiday)
+
+
+@hours_router.get("/holidays", response_model=list[HolidayResponse])
+async def list_holidays(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(Holiday).order_by(Holiday.date))
+        holidays = result.scalars().all()
+    return [_holiday_response(h) for h in holidays]
+
+
+@hours_router.patch("/holidays/{holiday_id}", response_model=HolidayResponse)
+async def update_holiday(
+    holiday_id: UUID,
+    payload: HolidayUpdate,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(Holiday).where(Holiday.id == holiday_id))
+        holiday = result.scalar_one_or_none()
+        if holiday is None:
+            raise HTTPException(status_code=404, detail=translate("catalogs.holiday_not_found", locale))
+        changes = {}
+        if payload.name is not None:
+            holiday.name = payload.name
+            changes["name"] = payload.name
+        if payload.payment_type is not None:
+            holiday.payment_type = payload.payment_type
+            changes["payment_type"] = payload.payment_type
+        if payload.active is not None:
+            holiday.active = payload.active
+            changes["active"] = payload.active
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="holiday.updated", resource_type="holiday", resource_id=holiday.id, extra=changes,
+        )
+        await session.commit()
+        await session.refresh(holiday)
+    return _holiday_response(holiday)

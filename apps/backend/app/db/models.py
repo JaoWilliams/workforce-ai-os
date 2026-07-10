@@ -208,6 +208,31 @@ class OvertimeApproval(Base):
     )
 
 
+class Holiday(Base):
+    """Catalogo de feriados por tenant - fechas y tipo (obligatorio/no
+    obligatorio) cargados por el cliente, cero fechas hardcodeadas (varian
+    cada ano: Semana Santa, feriados trasladados por decreto, etc). Ajusta
+    el bruto de nomina automaticamente via core/holidays.py: recargo si se
+    trabaja un obligatorio, pago de la jornada si no se trabaja un
+    obligatorio pero el turno lo tenia programado ese dia (decision
+    confirmada con el usuario 2026-07-10 - sin aprobacion de supervisor,
+    a diferencia de horas extra, porque es un hecho objetivo)."""
+    __tablename__ = "holidays"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # obligatorio | no_obligatorio
+    payment_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "date", name="uq_holiday_tenant_date"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 

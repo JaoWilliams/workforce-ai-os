@@ -19,6 +19,8 @@
   "branches.not_found": "Branch not found.",
   "catalogs.concept_code_exists": "A concept with that code already exists",
   "catalogs.concept_not_found": "Concept not found",
+  "catalogs.holiday_date_exists": "A holiday with that date already exists",
+  "catalogs.holiday_not_found": "Holiday not found",
   "catalogs.invalid_pay_frequency": "Invalid pay frequency",
   "catalogs.invalid_standard_hours": "Standard hours must be greater than zero",
   "confianza.flag_not_found": "The specified trust flag does not exist",

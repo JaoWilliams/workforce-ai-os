@@ -19,6 +19,8 @@
   "branches.not_found": "Sucursal no encontrada.",
   "catalogs.concept_code_exists": "Ya existe un concepto con ese código",
   "catalogs.concept_not_found": "Concepto no encontrado",
+  "catalogs.holiday_date_exists": "Ya existe un feriado con esa fecha",
+  "catalogs.holiday_not_found": "Feriado no encontrado",
   "catalogs.invalid_pay_frequency": "Frecuencia de pago inválida",
   "catalogs.invalid_standard_hours": "Las horas estándar deben ser mayores a cero",
   "confianza.flag_not_found": "La señal indicada no existe",

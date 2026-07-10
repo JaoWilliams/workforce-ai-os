@@ -31,6 +31,7 @@ from reportlab.platypus import HRFlowable, PageBreak, Paragraph, SimpleDocTempla
 from sqlalchemy import select
 
 from app.core.attendance_report import BROWN, CREAM, ORANGE, _Bookmark, _build_header_logos, compute_report_rows
+from app.core.holidays import compute_holiday_adjustments
 from app.db.models import Contract, OvertimeApproval, PayrollConcept, PayrollHoursConfig
 
 
@@ -68,6 +69,13 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
     )
     overtime_concept = concept_result.scalar_one_or_none()
     overtime_factor = float(overtime_concept.value) if overtime_concept else None
+
+    holiday_adjustments = await compute_holiday_adjustments(session, employee_ids, start_date, end_date, branch_id)
+    holiday_concept_result = await session.execute(
+        select(PayrollConcept).where(PayrollConcept.code == "FERIADO_OBLIGATORIO_TRABAJADO", PayrollConcept.active.is_(True))
+    )
+    holiday_concept = holiday_concept_result.scalar_one_or_none()
+    holiday_factor = float(holiday_concept.value) if holiday_concept else None
 
     payroll_rows = []
     for r in hours_rows:
@@ -114,6 +122,24 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
                     surcharge = round(approved_extra_hours * row["hourly_rate"] * (overtime_factor - 1), 2)
                     row["overtime_surcharge"] = surcharge
                     row["gross_pay"] = round(row["gross_pay"] + surcharge, 2)
+        holiday_entry = holiday_adjustments.get(r["employee_id"])
+        row["holiday_unworked_pay"] = None
+        row["holiday_worked_surcharge"] = None
+        row["holiday_concept_missing"] = False
+        if holiday_entry and row["gross_pay"] is not None:
+            if holiday_entry["unworked_paid_hours"] > 0:
+                unworked_pay = round(holiday_entry["unworked_paid_hours"] * row["hourly_rate"], 2)
+                row["holiday_unworked_pay"] = unworked_pay
+                row["gross_pay"] = round(row["gross_pay"] + unworked_pay, 2)
+            if holiday_entry["worked_surcharge_hours"] > 0:
+                if holiday_factor is None:
+                    row["gross_pay"] = None
+                    row["holiday_concept_missing"] = True
+                else:
+                    h_surcharge = round(holiday_entry["worked_surcharge_hours"] * row["hourly_rate"] * (holiday_factor - 1), 2)
+                    row["holiday_worked_surcharge"] = h_surcharge
+                    if row["gross_pay"] is not None:
+                        row["gross_pay"] = round(row["gross_pay"] + h_surcharge, 2)
         payroll_rows.append(row)
 
     payroll_rows.sort(key=lambda x: x["employee_name"])
