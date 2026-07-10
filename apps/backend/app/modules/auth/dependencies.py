@@ -28,4 +28,6 @@ async def get_current_user(
         user = await session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=translate("auth.user_not_found", locale))
+        if not user.active:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=translate("auth.invalid_token", locale))
         return user

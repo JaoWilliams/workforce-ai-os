@@ -36,5 +36,10 @@
   "shifts.template_not_found": "Shift template not found",
   "shifts.invalid_date_range": "End date cannot be before start date",
   "branches.has_active_employees": "Cannot deactivate: the branch has active employees assigned.",
-  "shifts.has_active_assignments": "Cannot deactivate: the shift has employees currently or future assigned."
+  "shifts.has_active_assignments": "Cannot deactivate: the shift has employees currently or future assigned.",
+  "auth.email_exists": "Email is already in use",
+  "auth.invalid_role": "The selected role is not valid",
+  "auth.cannot_deactivate_self": "You cannot deactivate your own account",
+  "rbac.role_not_found": "Role not found",
+  "rbac.has_active_users": "Cannot deactivate: the role has active users assigned"
 }
