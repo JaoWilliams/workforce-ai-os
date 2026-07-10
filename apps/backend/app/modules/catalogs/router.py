@@ -32,6 +32,7 @@ def _to_response(concept: PayrollConcept) -> PayrollConceptResponse:
         nature=concept.nature,
         origin=concept.origin,
         value=float(concept.value),
+        employer_value=float(concept.employer_value) if concept.employer_value is not None else None,
         active=concept.active,
     )
 
@@ -61,6 +62,7 @@ async def create_concept(
             nature=payload.nature,
             origin=payload.origin,
             value=payload.value,
+            employer_value=payload.employer_value,
             active=True,
         )
         session.add(concept)
@@ -78,6 +80,7 @@ async def create_concept(
                 "nature": payload.nature,
                 "origin": payload.origin,
                 "value": payload.value,
+                "employer_value": payload.employer_value,
             },
         )
         await session.commit()
@@ -118,6 +121,9 @@ async def update_concept(
         if payload.value is not None:
             concept.value = payload.value
             changes["value"] = payload.value
+        if payload.employer_value is not None:
+            concept.employer_value = payload.employer_value
+            changes["employer_value"] = payload.employer_value
         if payload.active is not None:
             concept.active = payload.active
             changes["active"] = payload.active

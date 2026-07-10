@@ -170,6 +170,8 @@ class PayrollConcept(Base):
     # patronal | empleado
     origin: Mapped[str] = mapped_column(String(20), nullable=False)
     value: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
+    # % patronal (CCSS y similares) - nullable, sin valor por defecto: no todo concepto tiene componente patronal
+    employer_value: Mapped[Optional[float]] = mapped_column(Numeric(12, 4), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 

@@ -11,11 +11,13 @@ class PayrollConceptCreate(BaseModel):
     nature: Literal["ingreso", "deduccion"]
     origin: Literal["patronal", "empleado"]
     value: float
+    employer_value: Optional[float] = None
 
 
 class PayrollConceptUpdate(BaseModel):
     name: Optional[str] = None
     value: Optional[float] = None
+    employer_value: Optional[float] = None
     active: Optional[bool] = None
 
 
@@ -27,6 +29,7 @@ class PayrollConceptResponse(BaseModel):
     nature: str
     origin: str
     value: float
+    employer_value: Optional[float] = None
     active: bool
 
 
