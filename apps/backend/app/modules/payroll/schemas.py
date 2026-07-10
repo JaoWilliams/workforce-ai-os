@@ -148,3 +148,15 @@ class VacationBalanceResponse(BaseModel):
     available_days: Optional[float] = None
     days_per_week_worked: Optional[int] = None
     cycle_weeks: Optional[float] = None
+
+
+class AguinaldoRow(BaseModel):
+    employee_id: UUID
+    employee_name: str
+    branch_id: UUID
+    branch_name: str
+    aguinaldo_base: Optional[float] = None
+    aguinaldo_amount: Optional[float] = None
+    periods_considered: int = 0
+    partial_year: bool = False
+    config_missing: bool = False

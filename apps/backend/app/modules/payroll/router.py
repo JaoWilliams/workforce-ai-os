@@ -12,6 +12,7 @@ from app.core.payroll import build_payroll_pdf, build_payroll_xlsx, compute_payr
 from app.core.overtime import generate_overtime_candidates
 from app.core.renta import compute_net_payroll_rows
 from app.core.vacations import compute_request_days_count, compute_vacation_balance
+from app.core.aguinaldo import compute_aguinaldo_rows
 from app.core.tenant import tenant_session
 from app.db.base import async_session
 from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User, VacationRequest
@@ -31,6 +32,7 @@ from app.modules.payroll.schemas import (
     VacationRequestCreate,
     VacationRequestResponse,
     VacationStatusUpdate,
+    AguinaldoRow,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -463,3 +465,14 @@ async def get_vacation_balance(
     async with tenant_session(current_user.tenant_id) as session:
         result = await compute_vacation_balance(session, employee_id, as_of or date.today())
     return VacationBalanceResponse(**result)
+
+
+@router.get("/aguinaldo", response_model=list[AguinaldoRow])
+async def get_aguinaldo(
+    year: int,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        rows = await compute_aguinaldo_rows(session, year, branch_id)
+    return rows

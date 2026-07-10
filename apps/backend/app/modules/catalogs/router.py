@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
+from app.db.models import AguinaldoConfig, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -23,6 +23,8 @@ from app.modules.catalogs.schemas import (
     TaxBracketResponse,
     VacationConfigResponse,
     VacationConfigUpsert,
+    AguinaldoConfigResponse,
+    AguinaldoConfigUpsert,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -416,3 +418,57 @@ async def get_vacation_config(
     if config is None:
         return None
     return VacationConfigResponse(cycle_weeks=float(config.cycle_weeks))
+
+
+@hours_router.put("/aguinaldo-config", response_model=AguinaldoConfigResponse)
+async def upsert_aguinaldo_config(
+    payload: AguinaldoConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(AguinaldoConfig))
+        config = result.scalars().first()
+        if config is None:
+            config = AguinaldoConfig(
+                id=uuid4(), tenant_id=current_user.tenant_id,
+                period_start_month=payload.period_start_month, period_start_day=payload.period_start_day,
+                period_end_month=payload.period_end_month, period_end_day=payload.period_end_day,
+                divisor=payload.divisor,
+            )
+            session.add(config)
+            action = "aguinaldo_config.created"
+        else:
+            config.period_start_month = payload.period_start_month
+            config.period_start_day = payload.period_start_day
+            config.period_end_month = payload.period_end_month
+            config.period_end_day = payload.period_end_day
+            config.divisor = payload.divisor
+            action = "aguinaldo_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="aguinaldo_config", resource_id=None,
+            extra={"divisor": payload.divisor},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return AguinaldoConfigResponse(
+        period_start_month=config.period_start_month, period_start_day=config.period_start_day,
+        period_end_month=config.period_end_month, period_end_day=config.period_end_day,
+        divisor=float(config.divisor),
+    )
+
+
+@hours_router.get("/aguinaldo-config", response_model=Optional[AguinaldoConfigResponse])
+async def get_aguinaldo_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(AguinaldoConfig))
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return AguinaldoConfigResponse(
+        period_start_month=config.period_start_month, period_start_day=config.period_start_day,
+        period_end_month=config.period_end_month, period_end_day=config.period_end_day,
+        divisor=float(config.divisor),
+    )

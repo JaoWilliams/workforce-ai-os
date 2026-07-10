@@ -97,3 +97,19 @@ class VacationConfigUpsert(BaseModel):
 
 class VacationConfigResponse(BaseModel):
     cycle_weeks: float
+
+
+class AguinaldoConfigUpsert(BaseModel):
+    period_start_month: int = 12
+    period_start_day: int = 1
+    period_end_month: int = 11
+    period_end_day: int = 30
+    divisor: float = 12
+
+
+class AguinaldoConfigResponse(BaseModel):
+    period_start_month: int
+    period_start_day: int
+    period_end_month: int
+    period_end_day: int
+    divisor: float

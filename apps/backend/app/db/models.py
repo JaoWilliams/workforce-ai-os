@@ -337,6 +337,33 @@ class VacationRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
+class AguinaldoConfig(Base):
+    """Configuracion de aguinaldo por tenant (Ley de Aguinaldo CR, Art. 1).
+    Ventana legal fija: 1 dic (ano anterior) a 30 nov (ano actual), monto =
+    suma de todo lo devengado como salario en esa ventana (ordinario,
+    extraordinario, comisiones y demas ingresos salariales que ya esten
+    reflejados en gross_pay) dividido entre divisor (12). Se guarda como
+    catalogo en vez de constante en codigo por consistencia con el resto
+    del proyecto (cero valores quemados), aunque el usuario confirmo que
+    son valores legales reales, no de prueba. Sin deducciones de CCSS/
+    renta (confirmado con el usuario 2026-07-10) - planilla dedicada,
+    separada de la planilla ordinaria."""
+    __tablename__ = "aguinaldo_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    period_start_month: Mapped[int] = mapped_column(nullable=False, default=12)
+    period_start_day: Mapped[int] = mapped_column(nullable=False, default=1)
+    period_end_month: Mapped[int] = mapped_column(nullable=False, default=11)
+    period_end_day: Mapped[int] = mapped_column(nullable=False, default=30)
+    divisor: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=12)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_aguinaldo_config_tenant"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 
