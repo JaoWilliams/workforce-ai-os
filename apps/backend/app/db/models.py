@@ -176,6 +176,38 @@ class PayrollConcept(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
+class OvertimeApproval(Base):
+    """Horas extra candidatas por dia de trabajo, calculadas contra la duracion
+    real del turno asignado (ShiftTemplate via ShiftAssignment, mod. 13) - no
+    contra un umbral fijo de horas por dia, porque distintos turnos ya tienen
+    horas extra implicitas segun su definicion. Requieren aprobacion explicita
+    de un supervisor antes de contar en el bruto de nomina: mientras haya
+    registros en estado pending para un empleado en el periodo, el bruto de
+    ese empleado queda bloqueado (ver compute_payroll_rows en core/payroll.py,
+    decision confirmada con el usuario 2026-07-10)."""
+    __tablename__ = "overtime_approvals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    shift_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shift_templates.id"), nullable=False
+    )
+    work_date: Mapped[date] = mapped_column(Date, nullable=False)
+    ordinary_hours: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    extra_hours: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    # pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "employee_id", "work_date", name="uq_overtime_tenant_employee_date"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 

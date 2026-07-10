@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -9,9 +9,10 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.payroll import build_payroll_pdf, build_payroll_xlsx, compute_payroll_rows
+from app.core.overtime import generate_overtime_candidates
 from app.core.tenant import tenant_session
 from app.db.base import async_session
-from app.db.models import PayrollPeriod, Tenant, User
+from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User
 from app.modules.payroll.schemas import (
     PayrollPeriodCreate,
     PayrollPeriodGenerateRequest,
@@ -19,6 +20,10 @@ from app.modules.payroll.schemas import (
     PayrollPeriodStatusUpdate,
     PayrollPeriodUpdate,
     PayrollRow,
+    OvertimeApprovalResponse,
+    OvertimeGenerateRequest,
+    OvertimeGenerateResponse,
+    OvertimeStatusUpdate,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -235,3 +240,101 @@ async def export_payroll_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post("/overtime/generate", response_model=OvertimeGenerateResponse)
+async def generate_overtime(
+    payload: OvertimeGenerateRequest,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.end_date < payload.start_date:
+        raise HTTPException(status_code=400, detail=translate("payroll.invalid_period_range", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        summary = await generate_overtime_candidates(
+            session, current_user.tenant_id, payload.start_date, payload.end_date, payload.branch_id
+        )
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="overtime.generated", resource_type="overtime_approval", resource_id=None,
+            extra={"start_date": str(payload.start_date), "end_date": str(payload.end_date),
+                   "created": summary["created"], "updated": summary["updated"]},
+        )
+    return OvertimeGenerateResponse(**summary)
+
+
+def _overtime_response(o: OvertimeApproval, employee: Employee, branch: Branch, template: ShiftTemplate) -> OvertimeApprovalResponse:
+    return OvertimeApprovalResponse(
+        id=o.id, employee_id=o.employee_id, employee_name=f"{employee.first_name} {employee.last_name}",
+        branch_id=branch.id, branch_name=branch.name,
+        shift_template_id=o.shift_template_id, shift_template_name=template.name if template else "?",
+        work_date=o.work_date, ordinary_hours=float(o.ordinary_hours), extra_hours=float(o.extra_hours),
+        status=o.status, reviewed_by=o.reviewed_by, reviewed_at=o.reviewed_at, notes=o.notes,
+    )
+
+
+@router.get("/overtime", response_model=list[OvertimeApprovalResponse])
+async def list_overtime(
+    status_filter: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        query = (
+            select(OvertimeApproval, Employee, Branch, ShiftTemplate)
+            .join(Employee, Employee.id == OvertimeApproval.employee_id)
+            .join(Branch, Branch.id == Employee.branch_id)
+            .join(ShiftTemplate, ShiftTemplate.id == OvertimeApproval.shift_template_id)
+            .order_by(OvertimeApproval.work_date.desc())
+        )
+        if status_filter:
+            query = query.where(OvertimeApproval.status == status_filter)
+        if start_date:
+            query = query.where(OvertimeApproval.work_date >= start_date)
+        if end_date:
+            query = query.where(OvertimeApproval.work_date <= end_date)
+        if branch_id:
+            query = query.where(Employee.branch_id == branch_id)
+        result = await session.execute(query)
+        rows = result.all()
+    return [_overtime_response(o, e, b, t) for o, e, b, t in rows]
+
+
+@router.patch("/overtime/{overtime_id}/status", response_model=OvertimeApprovalResponse)
+async def update_overtime_status(
+    overtime_id: UUID,
+    payload: OvertimeStatusUpdate,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.status not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail=translate("payroll.overtime_invalid_status", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(OvertimeApproval, Employee, Branch, ShiftTemplate)
+            .join(Employee, Employee.id == OvertimeApproval.employee_id)
+            .join(Branch, Branch.id == Employee.branch_id)
+            .join(ShiftTemplate, ShiftTemplate.id == OvertimeApproval.shift_template_id)
+            .where(OvertimeApproval.id == overtime_id)
+        )
+        row = result.first()
+        if row is None:
+            raise HTTPException(status_code=404, detail=translate("payroll.overtime_not_found", locale))
+        overtime, employee, branch, template = row
+        if overtime.status != "pending":
+            raise HTTPException(status_code=400, detail=translate("payroll.overtime_not_pending", locale))
+        overtime.status = payload.status
+        overtime.reviewed_by = current_user.id
+        overtime.reviewed_at = datetime.now(timezone.utc)
+        overtime.notes = payload.notes
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=f"overtime.{payload.status}", resource_type="overtime_approval", resource_id=overtime.id,
+            extra={"employee_id": str(overtime.employee_id), "work_date": str(overtime.work_date),
+                   "extra_hours": float(overtime.extra_hours), "notes": payload.notes},
+        )
+        await session.commit()
+        await session.refresh(overtime)
+    return _overtime_response(overtime, employee, branch, template)

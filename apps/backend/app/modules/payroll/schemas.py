@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -21,6 +21,10 @@ class PayrollRow(BaseModel):
     hourly_rate: Optional[float] = None
     gross_pay: Optional[float] = None
     hours_config_missing: bool = False
+    overtime_extra_hours: float = 0
+    overtime_pending: bool = False
+    overtime_concept_missing: bool = False
+    overtime_surcharge: Optional[float] = None
 
 
 class PayrollPeriodCreate(BaseModel):
@@ -57,3 +61,37 @@ class PayrollPeriodGenerateRequest(BaseModel):
     first_period_start: date
     days_per_period: int
     count: int
+
+
+class OvertimeGenerateRequest(BaseModel):
+    start_date: date
+    end_date: date
+    branch_id: Optional[UUID] = None
+
+
+class OvertimeGenerateResponse(BaseModel):
+    created: int
+    updated: int
+    skipped_unassigned: list
+
+
+class OvertimeApprovalResponse(BaseModel):
+    id: UUID
+    employee_id: UUID
+    employee_name: str
+    branch_id: UUID
+    branch_name: str
+    shift_template_id: UUID
+    shift_template_name: str
+    work_date: date
+    ordinary_hours: float
+    extra_hours: float
+    status: str
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class OvertimeStatusUpdate(BaseModel):
+    status: str
+    notes: Optional[str] = None

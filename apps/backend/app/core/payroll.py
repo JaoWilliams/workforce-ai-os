@@ -31,7 +31,7 @@ from reportlab.platypus import HRFlowable, PageBreak, Paragraph, SimpleDocTempla
 from sqlalchemy import select
 
 from app.core.attendance_report import BROWN, CREAM, ORANGE, _Bookmark, _build_header_logos, compute_report_rows
-from app.db.models import Contract, PayrollHoursConfig
+from app.db.models import Contract, OvertimeApproval, PayrollConcept, PayrollHoursConfig
 
 
 async def compute_payroll_rows(session, start_date: date, end_date: date, branch_id: Optional[UUID] = None):
@@ -51,6 +51,23 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
 
     config_result = await session.execute(select(PayrollHoursConfig))
     hours_by_frequency = {c.pay_frequency: float(c.standard_hours) for c in config_result.scalars().all()}
+
+    overtime_result = await session.execute(
+        select(OvertimeApproval).where(
+            OvertimeApproval.employee_id.in_(employee_ids),
+            OvertimeApproval.work_date >= start_date,
+            OvertimeApproval.work_date <= end_date,
+        )
+    )
+    overtime_by_employee = {}
+    for ot in overtime_result.scalars().all():
+        overtime_by_employee.setdefault(ot.employee_id, []).append(ot)
+
+    concept_result = await session.execute(
+        select(PayrollConcept).where(PayrollConcept.code == "HORAS_EXTRA", PayrollConcept.active.is_(True))
+    )
+    overtime_concept = concept_result.scalar_one_or_none()
+    overtime_factor = float(overtime_concept.value) if overtime_concept else None
 
     payroll_rows = []
     for r in hours_rows:
@@ -79,6 +96,24 @@ async def compute_payroll_rows(session, start_date: date, end_date: date, branch
                     "hourly_rate": round(hourly_rate, 4), "gross_pay": gross_pay,
                     "hours_config_missing": False,
                 })
+        ot_rows = overtime_by_employee.get(r["employee_id"], [])
+        has_pending_overtime = any(o.status == "pending" for o in ot_rows)
+        approved_extra_hours = round(sum(float(o.extra_hours) for o in ot_rows if o.status == "approved"), 2)
+        row["overtime_extra_hours"] = approved_extra_hours
+        row["overtime_pending"] = has_pending_overtime
+        row["overtime_concept_missing"] = False
+        row["overtime_surcharge"] = None
+        if row["gross_pay"] is not None:
+            if has_pending_overtime:
+                row["gross_pay"] = None
+            elif approved_extra_hours > 0:
+                if overtime_factor is None:
+                    row["gross_pay"] = None
+                    row["overtime_concept_missing"] = True
+                else:
+                    surcharge = round(approved_extra_hours * row["hourly_rate"] * (overtime_factor - 1), 2)
+                    row["overtime_surcharge"] = surcharge
+                    row["gross_pay"] = round(row["gross_pay"] + surcharge, 2)
         payroll_rows.append(row)
 
     payroll_rows.sort(key=lambda x: x["employee_name"])
