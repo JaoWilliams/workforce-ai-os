@@ -10,6 +10,7 @@ from app.db.models import Role, Tenant, User, UserRole
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.modules.auth.security import create_access_token, hash_password, verify_password
+from app.modules.rbac.dependencies import require_permission
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -96,6 +97,19 @@ async def login(payload: LoginRequest, locale: str = Depends(get_locale)):
 
     token = create_access_token(tenant_id=str(tenant.id), user_id=str(user.id))
     return TokenResponse(access_token=token)
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def list_users(
+    current_user: User = Depends(require_permission("users.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(User))
+        users = result.scalars().all()
+    return [
+        UserResponse(id=u.id, tenant_id=u.tenant_id, email=u.email)
+        for u in users
+    ]
 
 
 @router.get("/me", response_model=UserResponse)

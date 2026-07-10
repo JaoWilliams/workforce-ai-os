@@ -9,6 +9,7 @@ import { ToastProvider } from "../../../lib/toast";
 const NAV_ITEMS = [
   { key: "dashboard", href: "" },
   { key: "employees", href: "/empleados" },
+  { key: "branches", href: "/sucursales" },
   { key: "devices", href: "/dispositivos" },
   { key: "shifts", href: "/turnos" },
   { key: "feature_flags", href: "/feature-flags" },

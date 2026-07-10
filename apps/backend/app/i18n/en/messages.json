@@ -12,7 +12,7 @@
   "biometrics.device_at_capacity": "The device has reached its maximum capacity for this biometric type",
   "biometrics.device_branch_mismatch": "The device belongs to a different branch than the employee's",
   "biometrics.device_not_found": "The specified device does not exist",
-  "branches.not_found": "Branch not found",
+  "branches.not_found": "Branch not found.",
   "catalogs.concept_code_exists": "A concept with that code already exists",
   "catalogs.concept_not_found": "Concept not found",
   "confianza.flag_not_found": "The specified trust flag does not exist",
@@ -34,5 +34,6 @@
   "shifts.branch_not_found": "Branch not found",
   "shifts.employee_not_found": "Employee not found",
   "shifts.template_not_found": "Shift template not found",
-  "shifts.invalid_date_range": "End date cannot be before start date"
+  "shifts.invalid_date_range": "End date cannot be before start date",
+  "branches.has_active_employees": "Cannot deactivate: the branch has active employees assigned."
 }

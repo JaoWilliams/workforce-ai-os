@@ -10,8 +10,11 @@ class BranchCreate(BaseModel):
 
 
 class BranchUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
     accounting_account: Optional[str] = None
     supervisor_user_id: Optional[UUID] = None
+    active: Optional[bool] = None
 
 
 class BranchResponse(BaseModel):
@@ -20,3 +23,5 @@ class BranchResponse(BaseModel):
     name: str
     accounting_account: Optional[str] = None
     supervisor_user_id: Optional[UUID] = None
+    active: bool
+    employee_count: int = 0

@@ -38,6 +38,7 @@ class Branch(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     accounting_account: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     supervisor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
