@@ -22,6 +22,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Flowable, HRFlowable, Image as RLImage, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy import select
 
@@ -332,6 +333,9 @@ def build_report_pdf(rows, start_date: date, end_date: date, tenant_name: str = 
         small,
     ))
 
+    _ts_reader = ImageReader(TECHSUPPORT_LOGO) if os.path.exists(TECHSUPPORT_LOGO) else None
+    _bk_reader = ImageReader(BURGERKING_LOGO) if (os.path.exists(BURGERKING_LOGO) and "burger" in tenant_name.lower()) else None
+
     def _draw_footer(canvas_obj, doc_obj):
         canvas_obj.saveState()
         canvas_obj.setFont("Helvetica", 7.5)
@@ -344,5 +348,25 @@ def build_report_pdf(rows, start_date: date, end_date: date, tenant_name: str = 
             canvas_obj.drawRightString(letter[0] - 0.6 * inch, 0.4 * inch, tenant_name)
         canvas_obj.restoreState()
 
-    doc.build(story, onFirstPage=_draw_footer, onLaterPages=_draw_footer)
+    def _draw_mini_header(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        page_w, page_h = letter
+        logo_h = 0.24 * inch
+        x = page_w - 0.6 * inch
+        y = page_h - 0.5 * inch
+        if _bk_reader is not None:
+            iw, ih = _bk_reader.getSize()
+            w = logo_h * iw / ih
+            x -= w
+            canvas_obj.drawImage(_bk_reader, x, y, width=w, height=logo_h, mask="auto")
+            x -= 0.12 * inch
+        if _ts_reader is not None:
+            iw, ih = _ts_reader.getSize()
+            w = logo_h * iw / ih
+            x -= w
+            canvas_obj.drawImage(_ts_reader, x, y, width=w, height=logo_h, mask="auto")
+        canvas_obj.restoreState()
+        _draw_footer(canvas_obj, doc_obj)
+
+    doc.build(story, onFirstPage=_draw_footer, onLaterPages=_draw_mini_header)
     return buf.getvalue()
