@@ -18,7 +18,8 @@
     "logout": "Cerrar sesión",
     "shifts": "Turnos",
     "branches": "Sucursales",
-    "usuarios_roles": "Usuarios y Roles"
+    "usuarios_roles": "Usuarios y Roles",
+    "reports": "Reportes"
   },
   "dashboard": {
     "welcome_title": "Bienvenido a WORKFORCE AI",
@@ -392,5 +393,28 @@
     "module_confianza": "Confianza Operativa",
     "module_exceptions": "Excepciones",
     "module_shifts": "Turnos"
+  },
+  "reports": {
+    "title": "Reporte de Horas Trabajadas",
+    "start_date": "Fecha inicio",
+    "end_date": "Fecha fin",
+    "branch": "Sucursal",
+    "all_branches": "Todas las sucursales",
+    "search_placeholder": "Buscar empleado o sucursal...",
+    "group_by_label": "Agrupar por",
+    "group_by_employee": "Empleado",
+    "group_by_branch": "Sucursal",
+    "col_employee": "Empleado",
+    "col_branch": "Sucursal",
+    "col_days": "Días trabajados",
+    "col_sessions": "Sesiones",
+    "col_hours": "Horas",
+    "col_employees_count": "Empleados",
+    "export_excel": "Exportar Excel",
+    "export_pdf": "Exportar PDF",
+    "export_ok_toast": "Reporte descargado correctamente",
+    "no_data": "No hay marcaciones en el rango seleccionado",
+    "total_label": "TOTAL",
+    "col_accounting_account": "Cuenta Contable"
   }
 }

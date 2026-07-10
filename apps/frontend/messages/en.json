@@ -18,7 +18,8 @@
     "logout": "Log out",
     "shifts": "Shifts",
     "branches": "Branches",
-    "usuarios_roles": "Users and Roles"
+    "usuarios_roles": "Users and Roles",
+    "reports": "Reports"
   },
   "dashboard": {
     "welcome_title": "Welcome to WORKFORCE AI",
@@ -392,5 +393,28 @@
     "module_confianza": "Operational Trust",
     "module_exceptions": "Exceptions",
     "module_shifts": "Shifts"
+  },
+  "reports": {
+    "title": "Worked Hours Report",
+    "start_date": "Start date",
+    "end_date": "End date",
+    "branch": "Branch",
+    "all_branches": "All branches",
+    "search_placeholder": "Search employee or branch...",
+    "group_by_label": "Group by",
+    "group_by_employee": "Employee",
+    "group_by_branch": "Branch",
+    "col_employee": "Employee",
+    "col_branch": "Branch",
+    "col_days": "Days worked",
+    "col_sessions": "Sessions",
+    "col_hours": "Hours",
+    "col_employees_count": "Employees",
+    "export_excel": "Export Excel",
+    "export_pdf": "Export PDF",
+    "export_ok_toast": "Report downloaded successfully",
+    "no_data": "No attendance records in the selected range",
+    "total_label": "TOTAL",
+    "col_accounting_account": "Accounting Account"
   }
 }

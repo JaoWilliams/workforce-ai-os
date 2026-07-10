@@ -23,3 +23,14 @@ class AttendanceRecordResponse(BaseModel):
     biometric_enrollment_id: Optional[UUID] = None
     recorded_at: datetime
     is_simulated: bool
+
+
+class AttendanceReportRow(BaseModel):
+    employee_id: UUID
+    employee_name: str
+    branch_id: UUID
+    branch_name: str
+    branch_accounting_account: Optional[str] = None
+    days_worked: int
+    total_hours: float
+    total_sessions: int

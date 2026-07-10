@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { key: "shifts", href: "/turnos", permission: "shifts.view" },
   { key: "feature_flags", href: "/feature-flags", permission: "feature_flags.view" },
   { key: "attendance", href: "/marcacion", permission: "attendance.view" },
+  { key: "reports", href: "/reportes", permission: "attendance.view" },
   { key: "confianza", href: "/confianza", permission: "confianza.view" },
   { key: "exceptions", href: "/excepciones", permission: "exceptions.view" },
   { key: "usuarios_roles", href: "/usuarios-roles", permission: "users.view" },

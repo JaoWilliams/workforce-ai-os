@@ -1,15 +1,24 @@
-from uuid import uuid4
+from datetime import date
+from typing import Optional
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.core.attendance_report import build_report_pdf, build_report_xlsx, compute_report_rows
 from app.core.audit import log_audit
 from app.core.confianza_operativa import evaluate_new_attendance_record
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import AttendanceRecord, Device, Employee, User
-from app.modules.attendance.schemas import AttendanceRecordCreate, AttendanceRecordResponse
+from app.db.base import async_session
+from app.db.models import AttendanceRecord, Device, Employee, Tenant, User
+from app.modules.attendance.schemas import (
+    AttendanceRecordCreate,
+    AttendanceRecordResponse,
+    AttendanceReportRow,
+)
 from app.modules.rbac.dependencies import require_permission
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
@@ -95,3 +104,53 @@ async def list_attendance_records(
         result = await session.execute(select(AttendanceRecord).order_by(AttendanceRecord.recorded_at.desc()))
         records = result.scalars().all()
     return [_to_response(r) for r in records]
+
+
+@router.get("/report", response_model=list[AttendanceReportRow])
+async def get_attendance_report(
+    start_date: date,
+    end_date: date,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("attendance.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        rows = await compute_report_rows(session, start_date, end_date, branch_id)
+    return rows
+
+
+@router.get("/report/export-xlsx")
+async def export_attendance_report_xlsx(
+    start_date: date,
+    end_date: date,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("attendance.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        rows = await compute_report_rows(session, start_date, end_date, branch_id)
+    content = build_report_xlsx(rows, start_date, end_date)
+    filename = f"reporte_horas_{start_date}_{end_date}.xlsx"
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/report/export-pdf")
+async def export_attendance_report_pdf(
+    start_date: date,
+    end_date: date,
+    branch_id: Optional[UUID] = None,
+    current_user: User = Depends(require_permission("attendance.view")),
+):
+    async with async_session() as plain_session:
+        tenant = await plain_session.get(Tenant, current_user.tenant_id)
+    async with tenant_session(current_user.tenant_id) as session:
+        rows = await compute_report_rows(session, start_date, end_date, branch_id)
+    content = build_report_pdf(rows, start_date, end_date, tenant_name=tenant.name if tenant else "")
+    filename = f"reporte_horas_{start_date}_{end_date}.pdf"
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
