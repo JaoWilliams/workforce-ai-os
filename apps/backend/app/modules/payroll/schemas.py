@@ -191,3 +191,12 @@ class TerminationResponse(BaseModel):
     cesantia_frequency_unsupported: bool = False
     cesantia_no_history: bool = False
     cesantia_partial_history: bool = False
+class PayrollSnapshotLineResponse(BaseModel):
+    employee_id: UUID
+    employee_name: Optional[str] = None
+    branch_id: Optional[UUID] = None
+    gross_pay: Optional[float] = None
+    ccss_deduction: Optional[float] = None
+    renta_amount: Optional[float] = None
+    renta_is_refund: bool
+    net_pay: Optional[float] = None

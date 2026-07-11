@@ -43,7 +43,11 @@ from app.modules.rbac.dependencies import require_permission
 router = APIRouter(prefix="/api/payroll", tags=["payroll"])
 
 PAY_FREQUENCIES = ["semanal", "quincenal", "bisemanal", "mensual"]
-VALID_STATUSES = ["draft", "closed", "paid"]
+from app.core.payroll_run import transition_period
+from app.db.models import PayrollSnapshotLine
+from app.modules.payroll.schemas import PayrollSnapshotLineResponse
+
+VALID_STATUSES = ["draft", "validado", "calculado", "aprobado", "pagado", "contabilizado", "archivo_bancario"]
 
 
 def _period_response(p: PayrollPeriod) -> PayrollPeriodResponse:
@@ -193,15 +197,9 @@ async def update_period_status(
         if period is None:
             raise HTTPException(status_code=404, detail=translate("payroll.period_not_found", locale))
 
-        old_status = period.status
-        period.status = payload.status
-        await log_audit(
-            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
-            action="payroll_period.status_changed", resource_type="payroll_period", resource_id=period.id,
-            extra={"from": old_status, "to": payload.status},
-        )
-        await session.commit()
-        await session.refresh(period)
+        transition_result = await transition_period(session, current_user.tenant_id, period, payload.status, current_user.id)
+        if transition_result.get("error"):
+            raise HTTPException(status_code=400, detail=transition_result)
     return _period_response(period)
 
 
@@ -581,3 +579,36 @@ async def update_termination_status(
         response = await _termination_response(term, employee, session)
     return response
 
+
+@router.get("/periods/{period_id}/snapshot", response_model=list[PayrollSnapshotLineResponse])
+async def get_period_snapshot(
+    period_id: UUID,
+    current_user: User = Depends(require_permission("payroll.view")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        period_result = await session.execute(select(PayrollPeriod).where(PayrollPeriod.id == period_id))
+        period = period_result.scalar_one_or_none()
+        if period is None:
+            raise HTTPException(status_code=404, detail=translate("payroll.period_not_found", locale))
+        lines_result = await session.execute(select(PayrollSnapshotLine).where(PayrollSnapshotLine.payroll_period_id == period_id))
+        lines = lines_result.scalars().all()
+        employee_ids = [l.employee_id for l in lines]
+        employees_result = await session.execute(select(Employee).where(Employee.id.in_(employee_ids)))
+        employee_by_id = {e.id: e for e in employees_result.scalars().all()}
+    return [
+        PayrollSnapshotLineResponse(
+            employee_id=l.employee_id,
+            employee_name=(
+                f"{employee_by_id[l.employee_id].first_name} {employee_by_id[l.employee_id].last_name}"
+                if l.employee_id in employee_by_id else None
+            ),
+            branch_id=l.branch_id,
+            gross_pay=float(l.gross_pay) if l.gross_pay is not None else None,
+            ccss_deduction=float(l.ccss_deduction) if l.ccss_deduction is not None else None,
+            renta_amount=float(l.renta_amount) if l.renta_amount is not None else None,
+            renta_is_refund=l.renta_is_refund,
+            net_pay=float(l.net_pay) if l.net_pay is not None else None,
+        )
+        for l in lines
+    ]

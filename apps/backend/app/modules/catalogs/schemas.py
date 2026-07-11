@@ -164,3 +164,14 @@ class BankFileConfigUpsert(BaseModel):
 class BankFileConfigResponse(BaseModel):
     glosa: str
     active: bool
+class PayrollAnomalyConfigUpsert(BaseModel):
+    net_deviation_pct_threshold: float
+    overtime_hours_multiplier_threshold: float
+    bank_account_change_window_days: int
+    branch_net_deviation_pct_threshold: float
+class PayrollAnomalyConfigResponse(BaseModel):
+    net_deviation_pct_threshold: float
+    overtime_hours_multiplier_threshold: float
+    bank_account_change_window_days: int
+    branch_net_deviation_pct_threshold: float
+    active: bool

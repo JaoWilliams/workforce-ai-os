@@ -678,3 +678,66 @@ async def get_bank_file_config(
     if config is None:
         return None
     return BankFileConfigResponse(glosa=config.glosa, active=config.active)
+
+
+from app.db.models import PayrollAnomalyConfig
+from app.modules.catalogs.schemas import PayrollAnomalyConfigUpsert, PayrollAnomalyConfigResponse
+
+
+@hours_router.put("/payroll-anomaly-config", response_model=PayrollAnomalyConfigResponse)
+async def upsert_payroll_anomaly_config(
+    payload: PayrollAnomalyConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(PayrollAnomalyConfig))
+        config = result.scalars().first()
+        if config is None:
+            config = PayrollAnomalyConfig(
+                id=uuid4(), tenant_id=current_user.tenant_id,
+                net_deviation_pct_threshold=payload.net_deviation_pct_threshold,
+                overtime_hours_multiplier_threshold=payload.overtime_hours_multiplier_threshold,
+                bank_account_change_window_days=payload.bank_account_change_window_days,
+                branch_net_deviation_pct_threshold=payload.branch_net_deviation_pct_threshold,
+                active=True,
+            )
+            session.add(config)
+            action = "payroll_anomaly_config.created"
+        else:
+            config.net_deviation_pct_threshold = payload.net_deviation_pct_threshold
+            config.overtime_hours_multiplier_threshold = payload.overtime_hours_multiplier_threshold
+            config.bank_account_change_window_days = payload.bank_account_change_window_days
+            config.branch_net_deviation_pct_threshold = payload.branch_net_deviation_pct_threshold
+            action = "payroll_anomaly_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="payroll_anomaly_config", resource_id=None,
+            extra={"net_deviation_pct_threshold": payload.net_deviation_pct_threshold},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return PayrollAnomalyConfigResponse(
+        net_deviation_pct_threshold=float(config.net_deviation_pct_threshold),
+        overtime_hours_multiplier_threshold=float(config.overtime_hours_multiplier_threshold),
+        bank_account_change_window_days=config.bank_account_change_window_days,
+        branch_net_deviation_pct_threshold=float(config.branch_net_deviation_pct_threshold),
+        active=config.active,
+    )
+
+
+@hours_router.get("/payroll-anomaly-config", response_model=Optional[PayrollAnomalyConfigResponse])
+async def get_payroll_anomaly_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(PayrollAnomalyConfig))
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return PayrollAnomalyConfigResponse(
+        net_deviation_pct_threshold=float(config.net_deviation_pct_threshold),
+        overtime_hours_multiplier_threshold=float(config.overtime_hours_multiplier_threshold),
+        bank_account_change_window_days=config.bank_account_change_window_days,
+        branch_net_deviation_pct_threshold=float(config.branch_net_deviation_pct_threshold),
+        active=config.active,
+    )

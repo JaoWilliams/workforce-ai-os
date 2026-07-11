@@ -7,7 +7,9 @@ from pydantic import BaseModel
 
 class TrustFlagResponse(BaseModel):
     id: UUID
-    employee_id: UUID
+    employee_id: Optional[UUID] = None
+    payroll_period_id: Optional[UUID] = None
+    branch_id: Optional[UUID] = None
     rule_code: str
     severity: str
     details: dict

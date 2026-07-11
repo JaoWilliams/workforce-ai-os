@@ -43,12 +43,13 @@ async def generate_bank_transfer_rows(session, tenant_id: UUID, period: PayrollP
     if config is None or not config.active:
         return {"error": "bank_config_missing"}
 
-    # Import local (no al tope del archivo) a proposito: permite en los
-    # tests monkeypatchear renta_mod.compute_net_payroll_rows sin tocar
-    # este modulo, mismo patron ya usado en core/accounting.py.
-    from app.core.renta import compute_net_payroll_rows
+    # Fase 11: prefiere el snapshot congelado si el periodo ya paso por
+    # 'calculado' (inmutabilidad); si no, cae a calculo en vivo via
+    # compute_net_payroll_rows (mismo import local de siempre, para que
+    # el monkeypatch de tests existentes se preserve como fallback).
+    from app.core.payroll_run import get_net_payroll_rows_for_period
 
-    net_rows = await compute_net_payroll_rows(session, tenant_id, period, branch_id)
+    net_rows = await get_net_payroll_rows_for_period(session, tenant_id, period, branch_id)
 
     employee_ids = [r["employee_id"] for r in net_rows]
     employees_result = await session.execute(select(Employee).where(Employee.id.in_(employee_ids)))

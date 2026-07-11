@@ -122,7 +122,7 @@ class PayrollPeriod(Base):
     period_end: Mapped[date] = mapped_column(Date, nullable=False)
     # Null hasta que el cliente confirme la fecha real (puede correrse por feriados/fines de semana)
     pay_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    # draft | closed | paid
+    # draft | validado | calculado | aprobado | pagado | contabilizado | archivo_bancario
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
@@ -568,6 +568,57 @@ class BankTransferFileLine(Base):
     glosa: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
+class PayrollAnomalyConfig(Base):
+    """
+    Umbrales del motor de anomalias de nomina (fase 11), reusando el
+    Motor de Confianza Operativa (mod 17a). 1 fila por tenant. Valores
+    de PRUEBA flageados -- son parametros heuristicos de sensibilidad,
+    no valores legales, pero igual quedan como catalogo editable en vez
+    de constantes en el codigo.
+    """
+    __tablename__ = "payroll_anomaly_configs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    net_deviation_pct_threshold: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    overtime_hours_multiplier_threshold: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    bank_account_change_window_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    branch_net_deviation_pct_threshold: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_payroll_anomaly_config_tenant"),
+    )
+
+
+class PayrollSnapshotLine(Base):
+    """
+    Congelado inmutable del resultado de nomina neta por empleado, al
+    momento en que un PayrollPeriod pasa a 'calculado' (fase 11). Una
+    vez congelado, los consumidores downstream (asientos contables,
+    archivo bancario) leen de aqui en vez de recalcular en vivo -- asi
+    un cambio posterior en TaxBracket/CCSS/etc. no altera un periodo
+    ya calculado/pagado. 'detail' guarda la fila completa devuelta por
+    compute_net_payroll_rows (todos los ajustes: horas extra, feriado,
+    vacaciones, etc.) para trazabilidad completa.
+    """
+    __tablename__ = "payroll_snapshot_lines"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    payroll_period_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("payroll_periods.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
+    gross_pay: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    ccss_deduction: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    renta_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    renta_is_refund: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    net_pay: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    detail: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    __table_args__ = (
+        UniqueConstraint("payroll_period_id", "employee_id", name="uq_payroll_snapshot_period_employee"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 
@@ -727,8 +778,13 @@ class TrustFlag(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
-    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
-    # consecutive_same_type | impossible_travel | missing_biometric
+    employee_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=True)
+    payroll_period_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("payroll_periods.id"), nullable=True)
+    branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
+    # consecutive_same_type | impossible_travel | missing_biometric |
+    # payroll_net_deviation | payroll_net_zero_or_negative |
+    # payroll_overtime_outlier | payroll_bank_account_changed_before_payment |
+    # payroll_paid_after_termination | payroll_branch_net_outlier
     rule_code: Mapped[str] = mapped_column(String(50), nullable=False)
     # low | medium | high
     severity: Mapped[str] = mapped_column(String(20), nullable=False)

@@ -111,7 +111,11 @@ async def generate_payroll_journal_entry(session, tenant_id: UUID, payroll_perio
     if period is None:
         return {"error": "period_not_found"}
 
-    rows = await compute_net_payroll_rows(session, tenant_id, period, branch_id)
+    # Fase 11: prefiere el snapshot congelado si el periodo ya paso por
+    # 'calculado' (inmutabilidad); si no, cae a calculo en vivo (mismo
+    # comportamiento de siempre).
+    from app.core.payroll_run import get_net_payroll_rows_for_period
+    rows = await get_net_payroll_rows_for_period(session, tenant_id, period, branch_id)
     if not rows:
         return {"error": "no_rows"}
 

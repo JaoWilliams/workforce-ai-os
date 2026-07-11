@@ -15,7 +15,8 @@ router = APIRouter(prefix="/api/confianza-operativa", tags=["confianza_operativa
 
 def _to_response(f: TrustFlag) -> TrustFlagResponse:
     return TrustFlagResponse(
-        id=f.id, employee_id=f.employee_id, rule_code=f.rule_code, severity=f.severity,
+        id=f.id, employee_id=f.employee_id, payroll_period_id=f.payroll_period_id, branch_id=f.branch_id,
+        rule_code=f.rule_code, severity=f.severity,
         details=f.details, resolved=f.resolved, detected_at=f.detected_at,
     )
 
@@ -23,6 +24,7 @@ def _to_response(f: TrustFlag) -> TrustFlagResponse:
 @router.get("/flags", response_model=list[TrustFlagResponse])
 async def list_flags(
     employee_id: UUID | None = None,
+    payroll_period_id: UUID | None = None,
     resolved: bool | None = None,
     current_user: User = Depends(require_permission("confianza.view")),
 ):
@@ -30,6 +32,8 @@ async def list_flags(
         query = select(TrustFlag).order_by(TrustFlag.detected_at.desc())
         if employee_id is not None:
             query = query.where(TrustFlag.employee_id == employee_id)
+        if payroll_period_id is not None:
+            query = query.where(TrustFlag.payroll_period_id == payroll_period_id)
         if resolved is not None:
             query = query.where(TrustFlag.resolved == resolved)
         result = await session.execute(query)
