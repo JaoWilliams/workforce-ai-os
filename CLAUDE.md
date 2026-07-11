@@ -268,3 +268,27 @@ Regla: después de editar `models.py` (o cualquier código del backend),
 reconstruir la imagen (`docker compose build --no-cache api && docker
 compose up -d api`) ANTES de correr `alembic revision --autogenerate` — no
 alcanza con guardar el archivo en el host.
+
+
+## Estandar de pantallas con listado (obligatorio)
+
+Toda pantalla nueva que liste datos por empleado y/o sucursal (empleados,
+marcacion, excepciones, confianza operativa, dispositivos, reportes, etc.)
+debe cumplir, sin excepcion, dado que el sistema opera a escala de ~1400
+empleados en 54+ sucursales:
+
+1. Busqueda de texto libre (nombre, codigo, lo que aplique).
+2. Filtro por sucursal (dropdown poblado desde /api/branches) cuando los
+   registros se puedan asociar a una sucursal via employee.branch_id.
+3. Toast de exito/error en toda accion de creacion/edicion/eliminacion,
+   usando el hook useToast (lib/toast.js) - nunca solo un estado local.
+4. Autorefresh: recargar la lista (load()/loadX()) despues de cualquier
+   mutacion exitosa - nunca dejar que el usuario tenga que refrescar
+   manualmente.
+5. Estados de carga y vacio (LoadingState / EmptyState de lib/ui.js).
+6. Acciones de escritura ocultas/deshabilitadas segun permisos reales
+   (hasPermission de lib/permissions.js), nunca visibles a todos.
+
+Antes de dar por cerrada una pantalla nueva, correr:
+  bash scripts/audit_ui_standards.sh
+y revisar que no falte ninguno de los 6 puntos.
