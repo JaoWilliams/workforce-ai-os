@@ -17,6 +17,8 @@
   "biometrics.device_not_found": "El dispositivo indicado no existe",
   "branches.has_active_employees": "No se puede desactivar: la sucursal tiene empleados activos asignados.",
   "branches.not_found": "Sucursal no encontrada.",
+  "catalogs.account_code_exists": "Ya existe una cuenta contable con ese codigo",
+  "catalogs.account_not_found": "Cuenta contable no encontrada",
   "catalogs.concept_code_exists": "Ya existe un concepto con ese código",
   "catalogs.concept_not_found": "Concepto no encontrado",
   "catalogs.holiday_date_exists": "Ya existe un feriado con esa fecha",

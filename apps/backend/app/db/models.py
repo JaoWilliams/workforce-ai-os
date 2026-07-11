@@ -174,6 +174,7 @@ class PayrollConcept(Base):
     employer_value: Mapped[Optional[float]] = mapped_column(Numeric(12, 4), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    accounting_account_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("chart_of_accounts.id"), nullable=True)
 
 
 class OvertimeApproval(Base):
@@ -454,6 +455,63 @@ class Termination(Base):
     __table_args__ = (
         UniqueConstraint("tenant_id", "employee_id", name="uq_termination_tenant_employee"),
     )
+
+
+class ChartOfAccount(Base):
+    """Plan de cuentas contables del tenant. No existia previamente -
+    se crea en fase 9 (asientos) porque ninguna fase anterior necesitaba
+    modelar cuentas individuales (Branch.accounting_account cubria el
+    caso de centro de costo, pero no cuenta contable por concepto)."""
+    __tablename__ = "chart_of_accounts"
+    __table_args__ = (UniqueConstraint("tenant_id", "code", name="uq_chart_of_account_tenant_code"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # activo | pasivo | patrimonio | ingreso | gasto
+    account_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class JournalEntry(Base):
+    """Cabecera de un asiento contable. entry_type distingue el origen:
+    planilla (nomina ordinaria bruto/neto), aguinaldo_provision (8.33%
+    mensual), aguinaldo_pago (pago real de diciembre, cancela el pasivo
+    acumulado por las provisiones), vacaciones_provision (delta de dias
+    acumulados x tarifa Art.157), cesantia (solo al aprobar una
+    Termination con responsabilidad patronal - sin provision mensual
+    especulativa, decision confirmada con el cliente), ccss_patronal
+    (aporte patronal mensual, tasa de prueba flageada pendiente de
+    contador)."""
+    __tablename__ = "journal_entries"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    entry_date: Mapped[Date] = mapped_column(Date, nullable=False)
+    entry_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    payroll_period_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("payroll_periods.id"), nullable=True)
+    termination_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("terminations.id"), nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class JournalEntryLine(Base):
+    """Linea debe/haber de un asiento. branch_id opcional permite
+    reportar por centro de costo (sucursal) ademas de por cuenta."""
+    __tablename__ = "journal_entry_lines"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    journal_entry_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("journal_entries.id"), nullable=False)
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chart_of_accounts.id"), nullable=False)
+    branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
+    debit: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    credit: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False, default=0)
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
 class Device(Base):

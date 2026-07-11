@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import AguinaldoConfig, CesantiaConfig, CesantiaScaleRow, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
+from app.db.models import AguinaldoConfig, CesantiaConfig, CesantiaScaleRow, ChartOfAccount, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -30,6 +30,9 @@ from app.modules.catalogs.schemas import (
     CesantiaScaleRowResponse,
     CesantiaScaleRowUpsert,
     CesantiaScaleBulkUpsert,
+    ChartOfAccountCreate,
+    ChartOfAccountUpdate,
+    ChartOfAccountResponse,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -51,6 +54,7 @@ def _to_response(concept: PayrollConcept) -> PayrollConceptResponse:
         value=float(concept.value),
         employer_value=float(concept.employer_value) if concept.employer_value is not None else None,
         active=concept.active,
+        accounting_account_id=concept.accounting_account_id,
     )
 
 
@@ -80,6 +84,7 @@ async def create_concept(
             origin=payload.origin,
             value=payload.value,
             employer_value=payload.employer_value,
+            accounting_account_id=payload.accounting_account_id,
             active=True,
         )
         session.add(concept)
@@ -144,6 +149,9 @@ async def update_concept(
         if payload.active is not None:
             concept.active = payload.active
             changes["active"] = payload.active
+        if payload.accounting_account_id is not None:
+            concept.accounting_account_id = payload.accounting_account_id
+            changes["accounting_account_id"] = str(payload.accounting_account_id)
 
         await log_audit(
             session,
@@ -563,4 +571,73 @@ async def get_cesantia_scale(
         result = await session.execute(select(CesantiaScaleRow).order_by(CesantiaScaleRow.year_number))
         rows = result.scalars().all()
     return [CesantiaScaleRowResponse(year_number=r.year_number, days=float(r.days)) for r in rows]
+def _to_account_response(account: ChartOfAccount) -> ChartOfAccountResponse:
+    return ChartOfAccountResponse(
+        id=account.id, code=account.code, name=account.name,
+        account_type=account.account_type, active=account.active,
+    )
+@hours_router.post("/chart-of-accounts", response_model=ChartOfAccountResponse, status_code=201)
+async def create_chart_of_account(
+    payload: ChartOfAccountCreate,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        existing = await session.execute(
+            select(ChartOfAccount).where(ChartOfAccount.code == payload.code)
+        )
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=400, detail=translate("catalogs.account_code_exists", locale))
+        account = ChartOfAccount(
+            id=uuid4(), tenant_id=current_user.tenant_id, code=payload.code,
+            name=payload.name, account_type=payload.account_type, active=True,
+        )
+        session.add(account)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="chart_of_account.created", resource_type="chart_of_account", resource_id=account.id,
+            extra={"code": payload.code, "name": payload.name, "account_type": payload.account_type},
+        )
+        await session.commit()
+        await session.refresh(account)
+    return _to_account_response(account)
+@hours_router.get("/chart-of-accounts", response_model=list[ChartOfAccountResponse])
+async def list_chart_of_accounts(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(ChartOfAccount).order_by(ChartOfAccount.code))
+        accounts = result.scalars().all()
+    return [_to_account_response(a) for a in accounts]
+@hours_router.patch("/chart-of-accounts/{account_id}", response_model=ChartOfAccountResponse)
+async def update_chart_of_account(
+    account_id: UUID,
+    payload: ChartOfAccountUpdate,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(ChartOfAccount).where(ChartOfAccount.id == account_id))
+        account = result.scalar_one_or_none()
+        if account is None:
+            raise HTTPException(status_code=404, detail=translate("catalogs.account_not_found", locale))
+        changes = {}
+        if payload.name is not None:
+            account.name = payload.name
+            changes["name"] = payload.name
+        if payload.account_type is not None:
+            account.account_type = payload.account_type
+            changes["account_type"] = payload.account_type
+        if payload.active is not None:
+            account.active = payload.active
+            changes["active"] = payload.active
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="chart_of_account.updated", resource_type="chart_of_account", resource_id=account.id,
+            extra=changes,
+        )
+        await session.commit()
+        await session.refresh(account)
+    return _to_account_response(account)
+
 

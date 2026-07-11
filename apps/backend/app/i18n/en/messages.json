@@ -17,6 +17,8 @@
   "biometrics.device_not_found": "The specified device does not exist",
   "branches.has_active_employees": "Cannot deactivate: the branch has active employees assigned.",
   "branches.not_found": "Branch not found.",
+  "catalogs.account_code_exists": "An account with this code already exists",
+  "catalogs.account_not_found": "Account not found",
   "catalogs.concept_code_exists": "A concept with that code already exists",
   "catalogs.concept_not_found": "Concept not found",
   "catalogs.holiday_date_exists": "A holiday with that date already exists",

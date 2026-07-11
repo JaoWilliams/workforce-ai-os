@@ -13,6 +13,7 @@ class PayrollConceptCreate(BaseModel):
     origin: Literal["patronal", "empleado"]
     value: float
     employer_value: Optional[float] = None
+    accounting_account_id: Optional[UUID] = None
 
 
 class PayrollConceptUpdate(BaseModel):
@@ -20,6 +21,7 @@ class PayrollConceptUpdate(BaseModel):
     value: Optional[float] = None
     employer_value: Optional[float] = None
     active: Optional[bool] = None
+    accounting_account_id: Optional[UUID] = None
 
 
 class PayrollConceptResponse(BaseModel):
@@ -32,6 +34,7 @@ class PayrollConceptResponse(BaseModel):
     value: float
     employer_value: Optional[float] = None
     active: bool
+    accounting_account_id: Optional[UUID] = None
 
 
 class PayrollHoursConfigUpsert(BaseModel):
@@ -136,3 +139,23 @@ class CesantiaScaleRowResponse(BaseModel):
     days: float
 class CesantiaScaleBulkUpsert(BaseModel):
     rows: list[CesantiaScaleRowUpsert]
+
+
+class ChartOfAccountCreate(BaseModel):
+    code: str
+    name: str
+    account_type: Literal["activo", "pasivo", "patrimonio", "ingreso", "gasto"]
+
+
+class ChartOfAccountUpdate(BaseModel):
+    name: Optional[str] = None
+    account_type: Optional[Literal["activo", "pasivo", "patrimonio", "ingreso", "gasto"]] = None
+    active: Optional[bool] = None
+
+
+class ChartOfAccountResponse(BaseModel):
+    id: UUID
+    code: str
+    name: str
+    account_type: str
+    active: bool
