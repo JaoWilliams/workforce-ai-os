@@ -160,3 +160,34 @@ class AguinaldoRow(BaseModel):
     periods_considered: int = 0
     partial_year: bool = False
     config_missing: bool = False
+
+class TerminationCreate(BaseModel):
+    employee_id: UUID
+    termination_date: date
+    cause: str
+    con_responsabilidad_patronal: bool
+    notes: Optional[str] = None
+class TerminationStatusUpdate(BaseModel):
+    status: str
+    notes: Optional[str] = None
+class TerminationResponse(BaseModel):
+    id: UUID
+    employee_id: UUID
+    employee_name: str
+    termination_date: date
+    cause: str
+    con_responsabilidad_patronal: bool
+    status: str
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    cesantia_eligible: bool = False
+    cesantia_days: Optional[float] = None
+    cesantia_years_recognized: Optional[int] = None
+    cesantia_daily_rate: Optional[float] = None
+    cesantia_amount: Optional[float] = None
+    cesantia_config_missing: bool = False
+    cesantia_scale_missing: bool = False
+    cesantia_frequency_unsupported: bool = False
+    cesantia_no_history: bool = False
+    cesantia_partial_history: bool = False

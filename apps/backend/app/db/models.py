@@ -364,6 +364,98 @@ class AguinaldoConfig(Base):
     )
 
 
+class CesantiaConfig(Base):
+    """Configuracion de cesantia por tenant (Art. 28/29/30 Codigo de
+    Trabajo CR - ver documento "Cesantia Art 29.docx" cargado por el
+    cliente 2026-07-10). Valores legales reales confirmados por el
+    cliente, no placeholders:
+    - max_years_cap = 8 (tope legal, nunca se paga mas de 8 anos aunque
+      la antiguedad real sea mayor).
+    - fraction_round_months = 6 (si el resto de meses tras los anos
+      completos SUPERA este umbral, se redondea un anio adicional -
+      redondeo hacia arriba solo si es estrictamente MAYOR, no >=;
+      el documento del cliente se contradice entre su resumen ejecutivo
+      ">=6" y su seccion detallada "> 6" - se adopto la seccion detallada
+      por ser mas especifica, PENDIENTE de confirmar con el abogado
+      laboral del cliente).
+    - days_3to6_months = 7 (regla especial, menos de 1 anio de servicio).
+    - days_6to12_months = 14 (regla especial, menos de 1 anio de servicio).
+      Menos de 3 meses de servicio continuo = 0 dias, sin derecho.
+    - daily_divisor = 30 (salario promedio mensual / 30 = salario diario,
+      valido para pago mensual o quincenal - semanal usa otro divisor
+      segun el documento, 30 o 26 segun actividad comercial/no comercial,
+      NO soportado en esta fase por no haber contratos semanales reales
+      todavia, ver core/cesantia.py).
+    - months_for_average = 6 (ventana de meses hacia atras para el
+      salario promedio, "hasta 6" si hay menos historial disponible)."""
+    __tablename__ = "cesantia_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    max_years_cap: Mapped[int] = mapped_column(nullable=False, default=8)
+    fraction_round_months: Mapped[int] = mapped_column(nullable=False, default=6)
+    days_3to6_months: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False, default=7)
+    days_6to12_months: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False, default=14)
+    daily_divisor: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=30)
+    months_for_average: Mapped[int] = mapped_column(nullable=False, default=6)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_cesantia_config_tenant"),
+    )
+
+
+class CesantiaScaleRow(Base):
+    """Tabla oficial del Art. 29: dias de salario por cada anio laborado
+    (1 a 13+), tenant-scoped y editable como catalogo (cero valores
+    quemados), aunque el cliente confirmo que son los valores legales
+    reales del documento oficial (19.5, 20, 20.5, 21, 21.24, 21.5, 22,
+    22, 22, 21.5, 21, 20.5, 20). Solo se usan las filas 1 a
+    CesantiaConfig.max_years_cap (8) para el pago real; las filas 9-13
+    se guardan por completitud/transparencia pero no afectan el calculo
+    porque el tope las excluye."""
+    __tablename__ = "cesantia_scale_rows"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    year_number: Mapped[int] = mapped_column(nullable=False)
+    days: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "year_number", name="uq_cesantia_scale_tenant_year"),
+    )
+
+
+class Termination(Base):
+    """Evento de terminacion de contrato. con_responsabilidad_patronal
+    determina el derecho a cesantia (Art. 28: sin responsabilidad
+    patronal - despido con causa justa - NO da derecho; con
+    responsabilidad patronal - despido injustificado - SI da derecho).
+    Requiere aprobacion antes de calcularse como definitivo (decision
+    confirmada con el usuario 2026-07-10, mismo patron que
+    OvertimeApproval/VacationRequest mas el peso legal/financiero real
+    de una liquidacion). Al aprobarse, marca Employee.active=False."""
+    __tablename__ = "terminations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    termination_date: Mapped[date] = mapped_column(Date, nullable=False)
+    cause: Mapped[str] = mapped_column(String(255), nullable=False)
+    con_responsabilidad_patronal: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "employee_id", name="uq_termination_tenant_employee"),
+    )
+
+
 class Device(Base):
     __tablename__ = "devices"
 

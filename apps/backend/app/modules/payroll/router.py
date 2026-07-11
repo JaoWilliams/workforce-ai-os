@@ -13,9 +13,10 @@ from app.core.overtime import generate_overtime_candidates
 from app.core.renta import compute_net_payroll_rows
 from app.core.vacations import compute_request_days_count, compute_vacation_balance
 from app.core.aguinaldo import compute_aguinaldo_rows
+from app.core.cesantia import compute_cesantia_amount
 from app.core.tenant import tenant_session
 from app.db.base import async_session
-from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, User, VacationRequest
+from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, Termination, User, VacationRequest
 from app.modules.payroll.schemas import (
     PayrollPeriodCreate,
     PayrollPeriodGenerateRequest,
@@ -33,6 +34,9 @@ from app.modules.payroll.schemas import (
     VacationRequestResponse,
     VacationStatusUpdate,
     AguinaldoRow,
+    TerminationCreate,
+    TerminationResponse,
+    TerminationStatusUpdate,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -476,3 +480,104 @@ async def get_aguinaldo(
     async with tenant_session(current_user.tenant_id) as session:
         rows = await compute_aguinaldo_rows(session, year, branch_id)
     return rows
+async def _termination_response(t: Termination, employee: Employee, session) -> TerminationResponse:
+    cesantia = await compute_cesantia_amount(session, t)
+    return TerminationResponse(
+        id=t.id, employee_id=t.employee_id, employee_name=f"{employee.first_name} {employee.last_name}",
+        termination_date=t.termination_date, cause=t.cause,
+        con_responsabilidad_patronal=t.con_responsabilidad_patronal, status=t.status,
+        reviewed_by=t.reviewed_by, reviewed_at=t.reviewed_at, notes=t.notes,
+        cesantia_eligible=cesantia["eligible"], cesantia_days=cesantia["days"],
+        cesantia_years_recognized=cesantia["years_recognized"], cesantia_daily_rate=cesantia["daily_rate"],
+        cesantia_amount=cesantia["amount"], cesantia_config_missing=cesantia["config_missing"],
+        cesantia_scale_missing=cesantia["scale_missing"], cesantia_frequency_unsupported=cesantia["frequency_unsupported"],
+        cesantia_no_history=cesantia["no_history"], cesantia_partial_history=cesantia["partial_history"],
+    )
+@router.post("/terminations", response_model=TerminationResponse, status_code=201)
+async def create_termination(
+    payload: TerminationCreate,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        emp_result = await session.execute(select(Employee).where(Employee.id == payload.employee_id))
+        employee = emp_result.scalar_one_or_none()
+        if employee is None:
+            raise HTTPException(status_code=404, detail=translate("employees.not_found", locale))
+        if not employee.active:
+            raise HTTPException(status_code=400, detail=translate("payroll.termination_employee_inactive", locale))
+        existing_result = await session.execute(
+            select(Termination).where(Termination.employee_id == payload.employee_id)
+        )
+        if existing_result.scalars().first() is not None:
+            raise HTTPException(status_code=400, detail=translate("payroll.termination_already_exists", locale))
+        term = Termination(
+            id=uuid4(), tenant_id=current_user.tenant_id, employee_id=payload.employee_id,
+            termination_date=payload.termination_date, cause=payload.cause,
+            con_responsabilidad_patronal=payload.con_responsabilidad_patronal,
+            status="pending", notes=payload.notes,
+        )
+        session.add(term)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="termination.requested", resource_type="termination", resource_id=term.id,
+            extra={"employee_id": str(payload.employee_id), "con_responsabilidad_patronal": payload.con_responsabilidad_patronal},
+        )
+        await session.commit()
+        await session.refresh(term)
+        response = await _termination_response(term, employee, session)
+    return response
+@router.get("/terminations", response_model=list[TerminationResponse])
+async def list_terminations(
+    employee_id: Optional[UUID] = None,
+    status: Optional[str] = None,
+    current_user: User = Depends(require_permission("payroll.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        query = select(Termination, Employee).join(Employee, Employee.id == Termination.employee_id)
+        if employee_id is not None:
+            query = query.where(Termination.employee_id == employee_id)
+        if status is not None:
+            query = query.where(Termination.status == status)
+        result = await session.execute(query.order_by(Termination.created_at.desc()))
+        rows = result.all()
+        responses = [await _termination_response(t, e, session) for t, e in rows]
+    return responses
+@router.patch("/terminations/{termination_id}/status", response_model=TerminationResponse)
+async def update_termination_status(
+    termination_id: UUID,
+    payload: TerminationStatusUpdate,
+    current_user: User = Depends(require_permission("payroll.manage")),
+    locale: str = Depends(get_locale),
+):
+    if payload.status not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail=translate("payroll.termination_invalid_status", locale))
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(Termination, Employee)
+            .join(Employee, Employee.id == Termination.employee_id)
+            .where(Termination.id == termination_id)
+        )
+        row = result.first()
+        if row is None:
+            raise HTTPException(status_code=404, detail=translate("payroll.termination_not_found", locale))
+        term, employee = row
+        if term.status != "pending":
+            raise HTTPException(status_code=400, detail=translate("payroll.termination_not_pending", locale))
+        term.status = payload.status
+        term.reviewed_by = current_user.id
+        term.reviewed_at = datetime.now(timezone.utc)
+        term.notes = payload.notes
+        if payload.status == "approved":
+            employee.active = False
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=f"termination.{payload.status}", resource_type="termination", resource_id=term.id,
+            extra={"employee_id": str(term.employee_id), "notes": payload.notes},
+        )
+        await session.commit()
+        await session.refresh(term)
+        await session.refresh(employee)
+        response = await _termination_response(term, employee, session)
+    return response
+

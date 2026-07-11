@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import AguinaldoConfig, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
+from app.db.models import AguinaldoConfig, CesantiaConfig, CesantiaScaleRow, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -25,6 +25,11 @@ from app.modules.catalogs.schemas import (
     VacationConfigUpsert,
     AguinaldoConfigResponse,
     AguinaldoConfigUpsert,
+    CesantiaConfigResponse,
+    CesantiaConfigUpsert,
+    CesantiaScaleRowResponse,
+    CesantiaScaleRowUpsert,
+    CesantiaScaleBulkUpsert,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -472,3 +477,90 @@ async def get_aguinaldo_config(
         period_end_month=config.period_end_month, period_end_day=config.period_end_day,
         divisor=float(config.divisor),
     )
+@hours_router.put("/cesantia-config", response_model=CesantiaConfigResponse)
+async def upsert_cesantia_config(
+    payload: CesantiaConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(CesantiaConfig))
+        config = result.scalars().first()
+        if config is None:
+            config = CesantiaConfig(
+                id=uuid4(), tenant_id=current_user.tenant_id,
+                max_years_cap=payload.max_years_cap, fraction_round_months=payload.fraction_round_months,
+                days_3to6_months=payload.days_3to6_months, days_6to12_months=payload.days_6to12_months,
+                daily_divisor=payload.daily_divisor, months_for_average=payload.months_for_average,
+            )
+            session.add(config)
+            action = "cesantia_config.created"
+        else:
+            config.max_years_cap = payload.max_years_cap
+            config.fraction_round_months = payload.fraction_round_months
+            config.days_3to6_months = payload.days_3to6_months
+            config.days_6to12_months = payload.days_6to12_months
+            config.daily_divisor = payload.daily_divisor
+            config.months_for_average = payload.months_for_average
+            action = "cesantia_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="cesantia_config", resource_id=None,
+            extra={"max_years_cap": payload.max_years_cap},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return CesantiaConfigResponse(
+        max_years_cap=config.max_years_cap, fraction_round_months=config.fraction_round_months,
+        days_3to6_months=float(config.days_3to6_months), days_6to12_months=float(config.days_6to12_months),
+        daily_divisor=float(config.daily_divisor), months_for_average=config.months_for_average,
+    )
+@hours_router.get("/cesantia-config", response_model=Optional[CesantiaConfigResponse])
+async def get_cesantia_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(CesantiaConfig))
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return CesantiaConfigResponse(
+        max_years_cap=config.max_years_cap, fraction_round_months=config.fraction_round_months,
+        days_3to6_months=float(config.days_3to6_months), days_6to12_months=float(config.days_6to12_months),
+        daily_divisor=float(config.daily_divisor), months_for_average=config.months_for_average,
+    )
+@hours_router.put("/cesantia-scale", response_model=list[CesantiaScaleRowResponse])
+async def upsert_cesantia_scale(
+    payload: CesantiaScaleBulkUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        await session.execute(CesantiaScaleRow.__table__.delete())
+        rows = []
+        for item in payload.rows:
+            row = CesantiaScaleRow(
+                id=uuid4(), tenant_id=current_user.tenant_id,
+                year_number=item.year_number, days=item.days,
+            )
+            session.add(row)
+            rows.append(row)
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="cesantia_scale.replaced", resource_type="cesantia_scale_row", resource_id=None,
+            extra={"rows_count": len(payload.rows)},
+        )
+        await session.commit()
+        for row in rows:
+            await session.refresh(row)
+    return [
+        CesantiaScaleRowResponse(year_number=r.year_number, days=float(r.days))
+        for r in sorted(rows, key=lambda r: r.year_number)
+    ]
+@hours_router.get("/cesantia-scale", response_model=list[CesantiaScaleRowResponse])
+async def get_cesantia_scale(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(CesantiaScaleRow).order_by(CesantiaScaleRow.year_number))
+        rows = result.scalars().all()
+    return [CesantiaScaleRowResponse(year_number=r.year_number, days=float(r.days)) for r in rows]
+

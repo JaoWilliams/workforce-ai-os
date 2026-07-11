@@ -113,3 +113,26 @@ class AguinaldoConfigResponse(BaseModel):
     period_end_month: int
     period_end_day: int
     divisor: float
+
+class CesantiaConfigUpsert(BaseModel):
+    max_years_cap: int = 8
+    fraction_round_months: int = 6
+    days_3to6_months: float = 7
+    days_6to12_months: float = 14
+    daily_divisor: float = 30
+    months_for_average: int = 6
+class CesantiaConfigResponse(BaseModel):
+    max_years_cap: int
+    fraction_round_months: int
+    days_3to6_months: float
+    days_6to12_months: float
+    daily_divisor: float
+    months_for_average: int
+class CesantiaScaleRowUpsert(BaseModel):
+    year_number: int
+    days: float
+class CesantiaScaleRowResponse(BaseModel):
+    year_number: int
+    days: float
+class CesantiaScaleBulkUpsert(BaseModel):
+    rows: list[CesantiaScaleRowUpsert]
