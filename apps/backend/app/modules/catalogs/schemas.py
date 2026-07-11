@@ -159,3 +159,8 @@ class ChartOfAccountResponse(BaseModel):
     name: str
     account_type: str
     active: bool
+class BankFileConfigUpsert(BaseModel):
+    glosa: str
+class BankFileConfigResponse(BaseModel):
+    glosa: str
+    active: bool

@@ -29,6 +29,7 @@ def _employee_response(e: Employee) -> EmployeeResponse:
         id=e.id, branch_id=e.branch_id, first_name=e.first_name, last_name=e.last_name,
         id_type=e.id_type, id_number=e.id_number, email=e.email, phone=e.phone,
         position=e.position, hire_date=e.hire_date, active=e.active,
+        bank_account_type=e.bank_account_type, bank_account_number=e.bank_account_number,
     )
 
 
@@ -105,7 +106,7 @@ async def update_employee(
             raise HTTPException(status_code=404, detail=translate("employees.not_found", locale))
 
         changes = {}
-        for field in ("email", "phone", "position", "active"):
+        for field in ("email", "phone", "position", "active", "bank_account_type", "bank_account_number"):
             value = getattr(payload, field)
             if value is not None:
                 setattr(employee, field, value)

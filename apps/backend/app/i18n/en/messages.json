@@ -44,6 +44,7 @@
   "feature_flags.not_found": "The specified feature flag does not exist",
   "legal.consent_not_found": "Consent record not found",
   "legal.employee_not_found": "The specified employee does not exist",
+  "payroll.bank_transfer_file_not_found": "Bank transfer file not found",
   "payroll.invalid_generate_params": "Invalid generation parameters",
   "payroll.invalid_period_range": "End date cannot be before start date",
   "payroll.invalid_status": "Invalid status",

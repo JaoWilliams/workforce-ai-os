@@ -22,6 +22,8 @@ class EmployeeUpdate(BaseModel):
     phone: Optional[str] = None
     position: Optional[str] = None
     active: Optional[bool] = None
+    bank_account_type: Optional[Literal["Cuenta de Ahorro", "Cuenta Corriente"]] = None
+    bank_account_number: Optional[str] = None
 
 
 class EmployeeResponse(BaseModel):
@@ -36,6 +38,8 @@ class EmployeeResponse(BaseModel):
     position: str
     hire_date: date
     active: bool
+    bank_account_type: Optional[str] = None
+    bank_account_number: Optional[str] = None
 
 
 class ContractCreate(BaseModel):

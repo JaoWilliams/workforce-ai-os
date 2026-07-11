@@ -44,6 +44,7 @@
   "feature_flags.not_found": "La funcionalidad indicada no existe",
   "legal.consent_not_found": "Consentimiento no encontrado",
   "legal.employee_not_found": "El empleado indicado no existe",
+  "payroll.bank_transfer_file_not_found": "Archivo de transferencia bancaria no encontrado",
   "payroll.invalid_generate_params": "Parámetros de generación inválidos",
   "payroll.invalid_period_range": "La fecha de fin no puede ser anterior a la de inicio",
   "payroll.invalid_status": "Estado inválido",

@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import AguinaldoConfig, CesantiaConfig, CesantiaScaleRow, ChartOfAccount, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
+from app.db.models import AguinaldoConfig, BankFileConfig, CesantiaConfig, CesantiaScaleRow, ChartOfAccount, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -33,6 +33,8 @@ from app.modules.catalogs.schemas import (
     ChartOfAccountCreate,
     ChartOfAccountUpdate,
     ChartOfAccountResponse,
+    BankFileConfigUpsert,
+    BankFileConfigResponse,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -641,3 +643,38 @@ async def update_chart_of_account(
     return _to_account_response(account)
 
 
+@hours_router.put("/bank-file-config", response_model=BankFileConfigResponse)
+async def upsert_bank_file_config(
+    payload: BankFileConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(BankFileConfig))
+        config = result.scalars().first()
+        if config is None:
+            config = BankFileConfig(id=uuid4(), tenant_id=current_user.tenant_id, glosa=payload.glosa, active=True)
+            session.add(config)
+            action = "bank_file_config.created"
+        else:
+            config.glosa = payload.glosa
+            action = "bank_file_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="bank_file_config", resource_id=None,
+            extra={"glosa": payload.glosa},
+        )
+        await session.commit()
+        await session.refresh(config)
+    return BankFileConfigResponse(glosa=config.glosa, active=config.active)
+
+
+@hours_router.get("/bank-file-config", response_model=Optional[BankFileConfigResponse])
+async def get_bank_file_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(BankFileConfig))
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return BankFileConfigResponse(glosa=config.glosa, active=config.active)

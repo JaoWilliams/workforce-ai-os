@@ -16,6 +16,7 @@ from app.modules.shifts.router import router as shifts_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.payroll.router import router as payroll_router
 from app.modules.accounting.router import router as accounting_router
+from app.modules.bank_file.router import router as bank_file_router
 
 app = FastAPI(title="WORKFORCE AI OS API")
 
@@ -35,6 +36,7 @@ app.include_router(shifts_router)
 app.include_router(rbac_router)
 app.include_router(payroll_router)
 app.include_router(accounting_router)
+app.include_router(bank_file_router)
 
 
 @app.get("/api/health")

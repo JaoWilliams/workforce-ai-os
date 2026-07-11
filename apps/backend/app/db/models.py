@@ -3,7 +3,7 @@ from sqlalchemy import text
 from datetime import datetime, date, time
 from typing import Optional
 
-from sqlalchemy import DateTime, Date, Time, ForeignKey, String, Boolean, Numeric, UniqueConstraint, Text
+from sqlalchemy import DateTime, Date, Time, ForeignKey, String, Boolean, Numeric, Integer, UniqueConstraint, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -514,6 +514,60 @@ class JournalEntryLine(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
+class BankFileConfig(Base):
+    """
+    Configuracion del archivo de transferencia bancaria por tenant (fase 10).
+    La glosa (texto que aparece en la transferencia, ej. "PLANILLA
+    EMPRESARIAL BURGER KING COSTA RICA") es un valor real confirmado por el
+    cliente, cargado aqui como catalogo -- nunca hardcodeado en el codigo.
+    """
+    __tablename__ = "bank_file_configs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    glosa: Mapped[str] = mapped_column(String(255), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_bank_file_config_tenant"),
+    )
+
+
+class BankTransferFile(Base):
+    """
+    Cabecera de cada generacion real del archivo de transferencia bancaria
+    (fase 10). Queda como registro de auditoria: que se genero, cuando,
+    por cuanto, y cuantos empleados quedaron fuera por falta de cuenta
+    bancaria cargada.
+    """
+    __tablename__ = "bank_transfer_files"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    payroll_period_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("payroll_periods.id"), nullable=False)
+    branch_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id"), nullable=True)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_amount: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
+    missing_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+
+class BankTransferFileLine(Base):
+    """
+    Una linea = un empleado con su cuenta bancaria y el monto neto a
+    transferir. Guarda la glosa "congelada" al momento de generar (si la
+    config cambia despues, esta linea historica no se altera).
+    """
+    __tablename__ = "bank_transfer_file_lines"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    bank_transfer_file_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("bank_transfer_files.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    account_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(30), nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
+    glosa: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
 class Device(Base):
     __tablename__ = "devices"
 
@@ -557,6 +611,11 @@ class Employee(Base):
     position: Mapped[str] = mapped_column(String(150), nullable=False)
     hire_date: Mapped[Date] = mapped_column(Date, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Cuenta de Ahorro | Cuenta Corriente - para el archivo de transferencia
+    # bancaria (fase 10). Nullable: se completa despues via PATCH, no es
+    # obligatorio al crear el empleado.
+    bank_account_type: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    bank_account_number: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
 
