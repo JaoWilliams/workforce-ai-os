@@ -776,5 +776,22 @@
     "shift_alert_title": "Shift alert grace minutes",
     "no_show_grace_minutes": "Minutes before marking 'no clock-in'",
     "not_closed_grace_minutes": "Minutes before marking 'shift not closed'"
+  },
+  "positions": {
+    "title": "Positions",
+    "subtitle": "Catalog of suggested position names - the Employees field still accepts free text.",
+    "search_placeholder": "Search position...",
+    "no_data": "No positions created yet.",
+    "new_position": "New position",
+    "edit_position": "Edit position",
+    "name": "Name",
+    "create": "Create",
+    "save_changes": "Save changes",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "employee_count": "{count} employee(s) with this position",
+    "select_hint": "Select a position from the list to edit it.",
+    "saved_ok": "Saved successfully"
   }
 }

@@ -26,7 +26,7 @@ const NAV_GROUPS = [
     items: [
       { key: "branches", href: "/sucursales", permission: "branches.view" },
       { key: "departments", href: "/departamentos", permission: "catalogs.view" },
-      { key: "positions", href: "/puestos", permission: null, disabled: true },
+      { key: "positions", href: "/puestos", permission: "catalogs.view" },
     ],
   },
   {

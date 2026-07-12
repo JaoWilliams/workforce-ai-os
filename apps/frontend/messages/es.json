@@ -776,5 +776,22 @@
     "shift_alert_title": "Minutos de gracia de avisos de turno",
     "no_show_grace_minutes": "Minutos antes de marcar 'sin entrada'",
     "not_closed_grace_minutes": "Minutos antes de marcar 'turno sin cerrar'"
+  },
+  "positions": {
+    "title": "Puestos",
+    "subtitle": "Catalogo de nombres de puesto sugeridos - el campo de Empleados sigue aceptando texto libre.",
+    "search_placeholder": "Buscar puesto...",
+    "no_data": "Sin puestos creados todavia.",
+    "new_position": "Nuevo puesto",
+    "edit_position": "Editar puesto",
+    "name": "Nombre",
+    "create": "Crear",
+    "save_changes": "Guardar cambios",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "deactivate": "Desactivar",
+    "employee_count": "{count} empleado(s) con este puesto",
+    "select_hint": "Selecciona un puesto de la lista para editarlo.",
+    "saved_ok": "Guardado correctamente"
   }
 }

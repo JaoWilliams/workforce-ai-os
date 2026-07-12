@@ -55,6 +55,7 @@ export default function EmpleadosPage() {
   const [employees, setEmployees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -87,6 +88,7 @@ export default function EmpleadosPage() {
     loadEmployees();
     apiFetch("/api/branches").then(setBranches).catch(() => {});
     apiFetch("/api/departments").then(setDepartments).catch(() => {});
+    apiFetch("/api/positions").then(setPositions).catch(() => {});
   }, []);
   useEffect(() => {
     const highlightId = searchParams.get("highlight");
@@ -495,10 +497,16 @@ export default function EmpleadosPage() {
                     <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("position")}</label>
                     <input
                       required
+                      list="position-options-edit"
                       value={editForm.position}
                       onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
                       className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
                     />
+                    <datalist id="position-options-edit">
+                      {positions.map((p) => (
+                        <option key={p.id} value={p.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -879,10 +887,16 @@ export default function EmpleadosPage() {
             <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("position")}</label>
             <input
               required
+              list="position-options-create"
               value={form.position}
               onChange={(e) => setForm({ ...form, position: e.target.value })}
               className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
             />
+            <datalist id="position-options-create">
+              {positions.map((p) => (
+                <option key={p.id} value={p.name} />
+              ))}
+            </datalist>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
