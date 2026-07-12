@@ -331,6 +331,31 @@ class VacationConfig(Base):
     )
 
 
+class LeaveRequest(Base):
+    """Solicitud de permiso generico (medico, personal, duelo, otro) - a
+    diferencia de VacationRequest, NO alimenta el calculo de nomina (no
+    resta saldo de vacaciones, no genera vacation_pay via
+    core/vacations.py). Es solo tramite/aprobacion; cualquier efecto en
+    el pago varia por tipo de permiso y se maneja manualmente por RRHH
+    fuera de este modulo. Mismo patron de aprobacion que
+    TimeException/VacationRequest (pending/approved/rejected)."""
+    __tablename__ = "leave_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    # medico | personal | duelo | otro
+    leave_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
 class VacationRequest(Base):
     """Solicitud de vacaciones. days_count se calcula UNA vez al crear la
     solicitud (dias del rango que caen en dia laborable segun el turno del

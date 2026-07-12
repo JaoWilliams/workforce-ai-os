@@ -52,7 +52,7 @@ const NAV_GROUPS = [
     items: [
       { key: "attendance", href: "/marcacion", permission: "attendance.view" },
       { key: "exceptions", href: "/excepciones", permission: "exceptions.view" },
-      { key: "requests", href: "/solicitudes", permission: null, disabled: true },
+      { key: "requests", href: "/solicitudes", permission: "payroll.view" },
       { key: "reports", href: "/reportes", permission: "attendance.view" },
       { key: "shift_alerts", href: "/avisos-turno", permission: "shifts.view" },
     ],

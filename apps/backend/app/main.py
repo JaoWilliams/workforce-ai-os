@@ -4,6 +4,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
 from app.modules.departments.router import router as departments_router
 from app.modules.positions.router import router as positions_router
+from app.modules.leave_requests.router import router as leave_requests_router
 from app.modules.legal.router import router as legal_router
 from app.modules.catalogs.router import router as catalogs_router
 from app.modules.catalogs.router import hours_router as catalogs_hours_router
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(branches_router)
 app.include_router(departments_router)
 app.include_router(positions_router)
+app.include_router(leave_requests_router)
 app.include_router(legal_router)
 app.include_router(catalogs_router)
 app.include_router(catalogs_hours_router)
