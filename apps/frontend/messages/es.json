@@ -397,7 +397,8 @@
     "deactivated_ok_toast": "Plantilla desactivada correctamente",
     "reactivated_ok_toast": "Plantilla reactivada correctamente",
     "has_active_assignments_error": "No se puede desactivar: el turno tiene empleados asignados actualmente o a futuro.",
-    "select_template_edit_prompt": "Seleccione una plantilla para editar"
+    "select_template_edit_prompt": "Seleccione una plantilla para editar",
+    "cancel": "Cancelar"
   },
   "branches": {
     "title": "Sucursales",

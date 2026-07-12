@@ -397,7 +397,8 @@
     "deactivated_ok_toast": "Template deactivated successfully",
     "reactivated_ok_toast": "Template reactivated successfully",
     "has_active_assignments_error": "Cannot deactivate: the shift has employees currently or future assigned.",
-    "select_template_edit_prompt": "Select a template to edit"
+    "select_template_edit_prompt": "Select a template to edit",
+    "cancel": "Cancel"
   },
   "branches": {
     "title": "Branches",

@@ -56,6 +56,7 @@ export default function TurnosPage() {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [togglingActive, setTogglingActive] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -187,31 +188,39 @@ export default function TurnosPage() {
     }
   }
 
-  async function handleToggleActive() {
+  function handleToggleActive() {
     if (!selectedTemplate) return;
     if (selectedTemplate.active) {
-      if (!window.confirm(t("deactivate_confirm"))) return;
-      setTogglingActive(true);
-      try {
-        await apiFetch("/api/shifts/" + selectedTemplateId, { method: "DELETE" });
-        showToast(t("deactivated_ok_toast"));
-        loadTemplates();
-      } catch (err) {
-        showToast(err.message, "error");
-      } finally {
-        setTogglingActive(false);
-      }
-    } else {
-      setTogglingActive(true);
-      try {
-        await apiFetch("/api/shifts/" + selectedTemplateId, { method: "PATCH", body: JSON.stringify({ active: true }) });
-        showToast(t("reactivated_ok_toast"));
-        loadTemplates();
-      } catch (err) {
-        showToast(err.message, "error");
-      } finally {
-        setTogglingActive(false);
-      }
+      setConfirmDeactivate(true);
+      return;
+    }
+    reactivateTemplate();
+  }
+
+  async function reactivateTemplate() {
+    setTogglingActive(true);
+    try {
+      await apiFetch("/api/shifts/" + selectedTemplateId, { method: "PATCH", body: JSON.stringify({ active: true }) });
+      showToast(t("reactivated_ok_toast"));
+      loadTemplates();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setTogglingActive(false);
+    }
+  }
+
+  async function confirmDeactivateTemplate() {
+    setConfirmDeactivate(false);
+    setTogglingActive(true);
+    try {
+      await apiFetch("/api/shifts/" + selectedTemplateId, { method: "DELETE" });
+      showToast(t("deactivated_ok_toast"));
+      loadTemplates();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setTogglingActive(false);
     }
   }
 
@@ -649,6 +658,28 @@ export default function TurnosPage() {
           )}
         </div>
       </div>
+      {confirmDeactivate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-lg border border-bk-brown/10 p-5 max-w-sm w-full">
+            <p className="text-sm text-bk-brown mb-4">{t("deactivate_confirm")}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmDeactivate(false)}
+                className="text-xs font-semibold text-bk-brown border border-bk-brown/30 rounded-lg px-4 py-2"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={confirmDeactivateTemplate}
+                className="text-xs font-semibold text-white rounded-lg px-4 py-2"
+                style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}
+              >
+                {t("deactivate_template")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
