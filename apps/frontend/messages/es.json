@@ -333,7 +333,10 @@
     "reviewed_at": "Revisado el",
     "created_at": "Creado el",
     "search_placeholder": "Buscar por empleado, tipo o justificación...",
-    "filter_all_branches": "Todas las sucursales"
+    "filter_all_branches": "Todas las sucursales",
+    "evidence_file": "Evidencia (archivo)",
+    "evidence_hint": "Formatos permitidos: JPG, PNG, PDF. Maximo 10MB.",
+    "download_evidence": "Ver evidencia"
   },
   "shifts": {
     "title": "Turnos",

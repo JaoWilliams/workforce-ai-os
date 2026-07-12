@@ -333,7 +333,10 @@
     "reviewed_at": "Reviewed on",
     "created_at": "Created on",
     "search_placeholder": "Search by employee, type, or justification...",
-    "filter_all_branches": "All branches"
+    "filter_all_branches": "All branches",
+    "evidence_file": "Evidence (file)",
+    "evidence_hint": "Allowed formats: JPG, PNG, PDF. Max 10MB.",
+    "download_evidence": "View evidence"
   },
   "shifts": {
     "title": "Shifts",
