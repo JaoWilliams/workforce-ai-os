@@ -42,7 +42,7 @@ const NAV_GROUPS = [
     icon: Settings2,
     items: [
       { key: "shifts", href: "/turnos", permission: "shifts.view" },
-      { key: "work_calendar", href: "/calendario-laboral", permission: null, disabled: true },
+      { key: "work_calendar", href: "/calendario-laboral", permission: "shifts.view" },
       { key: "devices", href: "/dispositivos", permission: "devices.view" },
     ],
   },

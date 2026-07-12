@@ -872,5 +872,32 @@
     "no_shift_alerts": "No pending shift alerts.",
     "alert_no_show": "No clock-in",
     "alert_not_closed": "Shift not closed"
+  },
+  "work_calendar_page": {
+    "title": "Work Calendar",
+    "subtitle": "Drag a shift from the palette onto an employee and day to assign it. Single-day assignments can be dragged to move them; long-range ones are edited from Shifts.",
+    "prev_week": "Previous week",
+    "this_week": "This week",
+    "next_week": "Next week",
+    "all_branches": "All branches",
+    "search_employee_placeholder": "Search employee...",
+    "palette_hint": "Drag a shift onto a calendar cell",
+    "no_templates": "No active shift templates to show",
+    "employee": "Employee",
+    "no_employees": "No employees to show",
+    "drag_hint": "Drag to move this assignment",
+    "locked_hint": "Long-range assignment - edit from Shifts",
+    "conflict_toast": "That employee already has another assignment that day",
+    "assignment_created_toast": "Assignment created",
+    "assignment_moved_toast": "Assignment moved",
+    "assignment_removed_toast": "Assignment removed",
+    "remove_confirm": "Remove this assignment?",
+    "day_0": "Monday",
+    "day_1": "Tuesday",
+    "day_2": "Wednesday",
+    "day_3": "Thursday",
+    "day_4": "Friday",
+    "day_5": "Saturday",
+    "day_6": "Sunday"
   }
 }

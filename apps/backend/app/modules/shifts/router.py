@@ -14,6 +14,7 @@ from app.modules.shifts.schemas import (
     ShiftAlertResponse,
     ShiftAssignmentCreate,
     ShiftAssignmentResponse,
+    ShiftAssignmentUpdate,
     ShiftCoverageResponse,
     ShiftTemplateCreate,
     ShiftTemplateResponse,
@@ -211,6 +212,63 @@ async def list_shift_assignments(
         result = await session.execute(query)
         assignments = result.scalars().all()
     return [_assignment_to_response(a) for a in assignments]
+
+
+@router.patch("/assignments/{assignment_id}", response_model=ShiftAssignmentResponse)
+async def update_shift_assignment(
+    assignment_id: UUID,
+    payload: ShiftAssignmentUpdate,
+    current_user: User = Depends(require_permission("shifts.manage")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(ShiftAssignment).where(ShiftAssignment.id == assignment_id))
+        assignment = result.scalar_one_or_none()
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Asignacion no encontrada.")
+        changes = {}
+        if payload.employee_id is not None:
+            employee = await session.execute(select(Employee).where(Employee.id == payload.employee_id))
+            if employee.scalar_one_or_none() is None:
+                raise HTTPException(status_code=404, detail=translate("shifts.employee_not_found", locale))
+            assignment.employee_id = payload.employee_id
+            changes["employee_id"] = str(payload.employee_id)
+        if payload.start_date is not None:
+            assignment.start_date = payload.start_date
+            changes["start_date"] = str(payload.start_date)
+        if payload.end_date is not None:
+            assignment.end_date = payload.end_date
+            changes["end_date"] = str(payload.end_date)
+        if assignment.end_date is not None and assignment.end_date < assignment.start_date:
+            raise HTTPException(status_code=400, detail=translate("shifts.invalid_date_range", locale))
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="shift_assignment.updated", resource_type="shift_assignment", resource_id=assignment.id,
+            extra=changes,
+        )
+        await session.commit()
+        await session.refresh(assignment)
+    return _assignment_to_response(assignment)
+
+
+@router.delete("/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_shift_assignment(
+    assignment_id: UUID,
+    current_user: User = Depends(require_permission("shifts.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(ShiftAssignment).where(ShiftAssignment.id == assignment_id))
+        assignment = result.scalar_one_or_none()
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Asignacion no encontrada.")
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="shift_assignment.deleted", resource_type="shift_assignment", resource_id=assignment_id,
+            extra={"employee_id": str(assignment.employee_id), "shift_template_id": str(assignment.shift_template_id)},
+        )
+        await session.delete(assignment)
+        await session.commit()
+    return None
 
 
 @router.get("/alerts", response_model=list[ShiftAlertResponse])

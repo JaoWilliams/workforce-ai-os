@@ -872,5 +872,32 @@
     "no_shift_alerts": "Sin avisos de turno pendientes.",
     "alert_no_show": "Sin marcacion de entrada",
     "alert_not_closed": "Turno sin cerrar"
+  },
+  "work_calendar_page": {
+    "title": "Calendario Laboral",
+    "subtitle": "Arrastra un turno de la paleta hacia un empleado y dia para asignarlo. Las asignaciones de un solo dia se pueden arrastrar para moverlas; las de rango largo se editan desde Turnos.",
+    "prev_week": "Semana anterior",
+    "this_week": "Esta semana",
+    "next_week": "Semana siguiente",
+    "all_branches": "Todas las sucursales",
+    "search_employee_placeholder": "Buscar empleado...",
+    "palette_hint": "Arrastra un turno hacia una celda del calendario",
+    "no_templates": "No hay turnos activos para mostrar",
+    "employee": "Empleado",
+    "no_employees": "No hay empleados para mostrar",
+    "drag_hint": "Arrastra para mover esta asignacion",
+    "locked_hint": "Asignacion de rango largo - editar desde Turnos",
+    "conflict_toast": "Ese empleado ya tiene otra asignacion ese dia",
+    "assignment_created_toast": "Asignacion creada",
+    "assignment_moved_toast": "Asignacion movida",
+    "assignment_removed_toast": "Asignacion eliminada",
+    "remove_confirm": "¿Quitar esta asignacion?",
+    "day_0": "Lunes",
+    "day_1": "Martes",
+    "day_2": "Miercoles",
+    "day_3": "Jueves",
+    "day_4": "Viernes",
+    "day_5": "Sabado",
+    "day_6": "Domingo"
   }
 }

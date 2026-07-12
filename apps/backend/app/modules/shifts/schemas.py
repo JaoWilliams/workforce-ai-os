@@ -42,6 +42,12 @@ class ShiftAssignmentCreate(BaseModel):
     end_date: Optional[date] = None
 
 
+class ShiftAssignmentUpdate(BaseModel):
+    employee_id: Optional[UUID] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
 class ShiftAssignmentResponse(BaseModel):
     id: UUID
     employee_id: UUID
