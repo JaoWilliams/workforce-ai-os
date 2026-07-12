@@ -238,16 +238,11 @@ function DashboardShell({ children }) {
     <div className="min-h-screen flex bg-bk-cream2">
       <aside className="w-64 bg-bk-brown text-bk-cream flex flex-col">
         <div className="px-5 py-6 border-b border-bk-orange/25">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="bg-white rounded-md px-2 py-1 flex items-center">
-              <img src="/logos/techsupport-logo.png" alt="TechSupport" className="h-5 w-auto" />
+          {session.tenant_slug && session.tenant_slug.toLowerCase().includes("burger") && (
+            <div className="bg-white rounded-md px-2 py-1.5 inline-flex items-center mb-3">
+              <img src="/logos/bk-logo.png" alt="Burger King" className="h-8 w-auto" />
             </div>
-            {session.tenant_slug && session.tenant_slug.toLowerCase().includes("burger") && (
-              <div className="bg-white rounded-md px-2 py-1 flex items-center">
-                <img src="/logos/bk-logo.png" alt="Burger King" className="h-5 w-auto" />
-              </div>
-            )}
-          </div>
+          )}
           <p className="font-heading font-extrabold text-lg leading-tight tracking-wide">
             WORKFORCE&nbsp;<span className="text-bk-orange">AI</span>
           </p>
@@ -345,6 +340,9 @@ function DashboardShell({ children }) {
           </button>
         </div>
       </aside>
+      <div className="fixed top-4 right-6 z-50 bg-white rounded-md px-2 py-1 shadow-sm">
+        <img src="/logos/techsupport-logo.png" alt="TechSupport" className="h-6 w-auto" />
+      </div>
       <main className="flex-1 p-8 overflow-y-auto">{children}</main>
     </div>
     </ToastProvider>
