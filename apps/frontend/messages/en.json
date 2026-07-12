@@ -622,7 +622,9 @@
     "error_unbalanced": "The entry doesn't balance (debit != credit).",
     "error_generic": "Could not complete the action.",
     "legacy_status_title": "Legacy status",
-    "legacy_status_desc": "This period has a status from a previous schema ('{status}'), before the fase 11 orchestration. The standard flow can't continue from here."
+    "legacy_status_desc": "This period has a status from a previous schema ('{status}'), before the fase 11 orchestration. The standard flow can't continue from here.",
+    "col_boleta": "Payslip",
+    "download_payslip": "Download payslip"
   },
   "onboarding_center": {
     "title": "Onboarding Center",

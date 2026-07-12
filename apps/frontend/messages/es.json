@@ -622,7 +622,9 @@
     "error_unbalanced": "El asiento no cuadra (debe distinto de haber).",
     "error_generic": "No se pudo completar la acción.",
     "legacy_status_title": "Estado heredado",
-    "legacy_status_desc": "Este período tiene un estado de un esquema anterior ('{status}'), previo a la orquestación de fase 11. No se puede continuar el flujo estándar desde acá."
+    "legacy_status_desc": "Este período tiene un estado de un esquema anterior ('{status}'), previo a la orquestación de fase 11. No se puede continuar el flujo estándar desde acá.",
+    "col_boleta": "Boleta",
+    "download_payslip": "Descargar boleta"
   },
   "onboarding_center": {
     "title": "Centro de Onboarding",

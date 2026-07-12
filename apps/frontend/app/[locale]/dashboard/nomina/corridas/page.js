@@ -432,7 +432,7 @@ export default function PayrollRunsPage() {
     );
   }
 
-  function renderEmployeeTable(rowsSource) {
+  function renderEmployeeTable(rowsSource, withBoleta) {
     if (rowsSource.length === 0) {
       return <EmptyState icon={Calculator} message={t("no_data")} />;
     }
@@ -446,6 +446,9 @@ export default function PayrollRunsPage() {
               <th className="text-right px-4 py-2.5 text-xs font-semibold text-bk-brown/70">{t("col_ccss")}</th>
               <th className="text-right px-4 py-2.5 text-xs font-semibold text-bk-brown/70">{t("col_renta")}</th>
               <th className="text-right px-4 py-2.5 text-xs font-semibold text-bk-brown/70">{t("col_net")}</th>
+              {withBoleta && (
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-bk-brown/70">{t("col_boleta")}</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-bk-brown/10">
@@ -456,6 +459,18 @@ export default function PayrollRunsPage() {
                 <td className="px-4 py-2.5 text-right text-bk-brown/70">{formatMoney(r.ccss_deduction)}</td>
                 <td className="px-4 py-2.5 text-right text-bk-brown/70">{formatMoney(r.renta_amount)}</td>
                 <td className="px-4 py-2.5 text-right font-semibold text-bk-brown">{formatMoney(r.net_pay)}</td>
+                {withBoleta && (
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPayslip(r.employee_id)}
+                      className="text-xs font-semibold text-white rounded-lg px-3 py-1.5"
+                      style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}
+                    >
+                      {t("download_payslip")}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -511,7 +526,7 @@ export default function PayrollRunsPage() {
             <h3 className="text-xs font-bold uppercase tracking-wide text-bk-brown/50 mb-2">{t("anomaly_queue_title")}</h3>
             <div className="mb-5">{renderAnomalyQueue()}</div>
             <h3 className="text-xs font-bold uppercase tracking-wide text-bk-brown/50 mb-2">{t("snapshot_title")}</h3>
-            <div className="mb-4">{renderEmployeeTable(snapshotRows)}</div>
+            <div className="mb-4">{renderEmployeeTable(snapshotRows, true)}</div>
             {canManage && (
               <button type="button" disabled={transitioning || unresolvedCount > 0} onClick={() => handleTransition("aprobado")} className="flex items-center gap-2 text-sm font-semibold text-white rounded-lg px-4 py-2 disabled:opacity-50" style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}>
                 <ThumbsUp size={16} />
@@ -597,7 +612,7 @@ export default function PayrollRunsPage() {
               </button>
             )}
             <h3 className="text-xs font-bold uppercase tracking-wide text-bk-brown/50 mb-2">{t("snapshot_title")}</h3>
-            {renderEmployeeTable(snapshotRows)}
+            {renderEmployeeTable(snapshotRows, true)}
           </>
         )}
       </div>

@@ -3,12 +3,13 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.payroll import build_payroll_pdf, build_payroll_xlsx, compute_payroll_rows
+from app.core.payslip_pdf import generate_payslip_pdf
 from app.core.overtime import generate_overtime_candidates
 from app.core.renta import compute_net_payroll_rows
 from app.core.vacations import compute_request_days_count, compute_vacation_balance
@@ -16,7 +17,7 @@ from app.core.aguinaldo import compute_aguinaldo_rows
 from app.core.cesantia import compute_cesantia_amount
 from app.core.tenant import tenant_session
 from app.db.base import async_session
-from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, ShiftTemplate, Tenant, Termination, User, VacationRequest
+from app.db.models import Branch, Employee, OvertimeApproval, PayrollPeriod, PayrollSnapshotLine, ShiftTemplate, Tenant, Termination, User, VacationRequest
 from app.modules.payroll.schemas import (
     PayrollPeriodCreate,
     PayrollPeriodGenerateRequest,
@@ -578,6 +579,48 @@ async def update_termination_status(
         await session.refresh(employee)
         response = await _termination_response(term, employee, session)
     return response
+
+
+@router.get("/periods/{period_id}/snapshot/{employee_id}/payslip")
+async def download_payslip_pdf(
+    period_id: UUID,
+    employee_id: UUID,
+    current_user: User = Depends(require_permission("payroll.view")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        period = await session.get(PayrollPeriod, period_id)
+        if period is None:
+            raise HTTPException(status_code=404, detail="Periodo no encontrado")
+        result = await session.execute(
+            select(PayrollSnapshotLine).where(
+                PayrollSnapshotLine.payroll_period_id == period_id,
+                PayrollSnapshotLine.employee_id == employee_id,
+            )
+        )
+        line = result.scalar_one_or_none()
+        if line is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Boleta no disponible - el periodo aun no ha sido calculado para este empleado",
+            )
+        employee = await session.get(Employee, employee_id)
+        if employee is None:
+            raise HTTPException(status_code=404, detail="Empleado no encontrado")
+    async with async_session() as plain_session:
+        tenant = await plain_session.get(Tenant, current_user.tenant_id)
+    pdf_path = generate_payslip_pdf(
+        tenant_name=tenant.name if tenant else "",
+        employee=employee,
+        period=period,
+        line=line,
+        language=locale if locale in ("es", "en") else "es",
+    )
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=f"boleta_{period_id}_{employee_id}.pdf",
+    )
 
 
 @router.get("/periods/{period_id}/snapshot", response_model=list[PayrollSnapshotLineResponse])
