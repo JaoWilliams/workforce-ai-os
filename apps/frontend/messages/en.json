@@ -153,7 +153,9 @@
     "birth_date": "Birth date",
     "no_birth_date": "not recorded",
     "activate": "Activate",
-    "deactivate": "Deactivate"
+    "deactivate": "Deactivate",
+    "department": "Department",
+    "select_department": "No department"
   },
   "devices": {
     "title": "Devices",
@@ -792,6 +794,23 @@
     "deactivate": "Deactivate",
     "employee_count": "{count} employee(s) with this position",
     "select_hint": "Select a position from the list to edit it.",
+    "saved_ok": "Saved successfully"
+  },
+  "departments": {
+    "title": "Departments",
+    "subtitle": "Organize your employees by department (optional, independent of branch).",
+    "search_placeholder": "Search department...",
+    "no_data": "No departments created yet.",
+    "new_department": "New department",
+    "edit_department": "Edit department",
+    "name": "Name",
+    "create": "Create",
+    "save_changes": "Save changes",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "employee_count": "{count} employee(s) assigned",
+    "select_hint": "Select a department from the list to edit it.",
     "saved_ok": "Saved successfully"
   }
 }

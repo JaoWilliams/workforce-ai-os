@@ -153,7 +153,9 @@
     "birth_date": "Fecha de nacimiento",
     "no_birth_date": "sin registrar",
     "activate": "Activar",
-    "deactivate": "Desactivar"
+    "deactivate": "Desactivar",
+    "department": "Departamento",
+    "select_department": "Sin departamento"
   },
   "devices": {
     "title": "Dispositivos",
@@ -792,6 +794,23 @@
     "deactivate": "Desactivar",
     "employee_count": "{count} empleado(s) con este puesto",
     "select_hint": "Selecciona un puesto de la lista para editarlo.",
+    "saved_ok": "Guardado correctamente"
+  },
+  "departments": {
+    "title": "Departamentos",
+    "subtitle": "Organiza a tus empleados por departamento (opcional, independiente de la sucursal).",
+    "search_placeholder": "Buscar departamento...",
+    "no_data": "Sin departamentos creados todavia.",
+    "new_department": "Nuevo departamento",
+    "edit_department": "Editar departamento",
+    "name": "Nombre",
+    "create": "Crear",
+    "save_changes": "Guardar cambios",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "deactivate": "Desactivar",
+    "employee_count": "{count} empleado(s) asignado(s)",
+    "select_hint": "Selecciona un departamento de la lista para editarlo.",
     "saved_ok": "Guardado correctamente"
   }
 }
