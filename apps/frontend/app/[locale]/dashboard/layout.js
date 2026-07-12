@@ -251,8 +251,8 @@ function DashboardShell({ children }) {
               <img src="/logos/bk-logo.png" alt="Burger King" className="h-8 w-auto" />
             </div>
           )}
-          <p className="font-heading font-extrabold text-base leading-tight tracking-normal break-words">
-            WORKFORCE <span className="text-bk-orange">AI</span>
+          <p className="font-heading font-extrabold text-sm leading-tight tracking-tight whitespace-nowrap">
+            WORKFORCE<span className="text-bk-orange">AI</span>
           </p>
           <p className="text-xs text-bk-cream/60 mt-1 uppercase tracking-wide">{session.tenant_slug}</p>
         </div>
