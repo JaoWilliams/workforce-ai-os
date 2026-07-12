@@ -9,6 +9,7 @@ import {
   Settings2,
   Clock,
   Sparkles,
+  TrendingUp,
   Wallet,
   Settings,
   ChevronDown,
@@ -63,6 +64,13 @@ const NAV_GROUPS = [
     items: [
       { key: "confianza", href: "/confianza", permission: "confianza.view" },
       { key: "ai_center", href: "/centro-ia", permission: "confianza.view" },
+    ],
+  },
+  {
+    key: "gerencial",
+    icon: TrendingUp,
+    items: [
+      { key: "labor_analytics", href: "/analisis-gerencial", permission: "payroll.view" },
     ],
   },
   {
