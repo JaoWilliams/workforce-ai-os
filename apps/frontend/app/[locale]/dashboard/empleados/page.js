@@ -13,6 +13,7 @@ const CURRENCIES = ["CRC", "USD", "GTQ", "HNL", "NIO", "PAB"];
 const PAY_FREQUENCIES = ["semanal", "quincenal", "bisemanal", "mensual"];
 const BANK_ACCOUNT_TYPES = ["Cuenta de Ahorro", "Cuenta Corriente"];
 const CONTRACT_LANGUAGES = ["es", "en"];
+const DEPENDENT_RELATIONSHIP_TYPES = ["conyuge", "hijo"];
 
 const emptyForm = {
   branch_id: "",
@@ -34,6 +35,11 @@ const emptyContractForm = {
   currency: "CRC",
   pay_frequency: "mensual",
   language: "es",
+};
+const emptyDependentForm = {
+  relationship_type: "hijo",
+  name: "",
+  birth_date: "",
 };
 
 export default function EmpleadosPage() {
@@ -68,6 +74,12 @@ export default function EmpleadosPage() {
   const [creatingContract, setCreatingContract] = useState(false);
   const [contractError, setContractError] = useState(null);
   const [checkingOnboarding, setCheckingOnboarding] = useState(false);
+
+  const [dependents, setDependents] = useState([]);
+  const [dependentsLoading, setDependentsLoading] = useState(false);
+  const [dependentForm, setDependentForm] = useState(emptyDependentForm);
+  const [creatingDependent, setCreatingDependent] = useState(false);
+  const [dependentError, setDependentError] = useState(null);
 
   useEffect(() => {
     loadEmployees();
@@ -127,6 +139,18 @@ export default function EmpleadosPage() {
       setError(err.message);
     } finally {
       setContractsLoading(false);
+    }
+    setDependentForm(emptyDependentForm);
+    setDependentError(null);
+    setDependents([]);
+    setDependentsLoading(true);
+    try {
+      const depData = await apiFetch("/api/employees/" + emp.id + "/dependents");
+      setDependents(depData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDependentsLoading(false);
     }
   }
 
@@ -276,6 +300,50 @@ export default function EmpleadosPage() {
       setCheckingOnboarding(false);
     }
   }
+
+  async function handleCreateDependent(e) {
+    e.preventDefault();
+    setCreatingDependent(true);
+    setDependentError(null);
+    try {
+      const payload = {
+        relationship_type: dependentForm.relationship_type,
+        name: dependentForm.name,
+        birth_date: dependentForm.birth_date || null,
+      };
+      await apiFetch("/api/employees/" + selected.id + "/dependents", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setDependentForm(emptyDependentForm);
+      const depData = await apiFetch("/api/employees/" + selected.id + "/dependents");
+      setDependents(depData);
+      showToast(t("dependent_saved_ok"));
+    } catch (err) {
+      setDependentError(err.message);
+    } finally {
+      setCreatingDependent(false);
+    }
+  }
+
+  async function handleToggleDependentActive(dep) {
+    try {
+      await apiFetch("/api/employees/" + selected.id + "/dependents/" + dep.id, {
+        method: "PATCH",
+        body: JSON.stringify({ active: !dep.active }),
+      });
+      const depData = await apiFetch("/api/employees/" + selected.id + "/dependents");
+      setDependents(depData);
+      showToast(t("dependent_saved_ok"));
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function dependentRelationshipLabel(type) {
+    return t("relationship_" + type);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -610,6 +678,95 @@ export default function EmpleadosPage() {
                       {t("new_contract")}
                     </button>
                   </form>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 p-5">
+                <h2 className="font-heading font-bold text-bk-brown mb-4">{t("dependents_title")}</h2>
+                <p className="text-xs text-bk-brown/50 mb-4">{t("dependents_hint")}</p>
+                {dependentsLoading ? (
+                  <p className="text-sm text-bk-brown/60">...</p>
+                ) : dependents.length === 0 ? (
+                  <p className="text-sm text-bk-brown/60 mb-4">{t("no_dependents")}</p>
+                ) : (
+                  <div className="space-y-3 mb-5">
+                    {dependents.map((d) => (
+                      <div key={d.id} className="border border-bk-brown/10 rounded-lg p-4 text-sm flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-bk-brown mb-1">
+                            {d.name}{" "}
+                            <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-bk-brown/10 text-bk-brown/70 align-middle">
+                              {dependentRelationshipLabel(d.relationship_type)}
+                            </span>
+                          </p>
+                          <p className="text-bk-brown/70">
+                            {t("birth_date")}: {d.birth_date || t("no_birth_date")}
+                          </p>
+                        </div>
+                        {hasPermission("employees.manage") && (
+                          <button
+                            onClick={() => handleToggleDependentActive(d)}
+                            className={
+                              "text-xs font-semibold rounded-lg px-3 py-1.5 " +
+                              (d.active ? "bg-bk-brown/10 text-bk-brown/70" : "text-white")
+                            }
+                            style={!d.active ? { background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" } : {}}
+                          >
+                            {d.active ? t("deactivate") : t("activate")}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="border-t border-bk-brown/10 pt-4">
+                  <h3 className="font-heading font-bold text-bk-brown mb-3 text-sm">{t("new_dependent")}</h3>
+                  {dependentError && (
+                    <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{dependentError}</p>
+                  )}
+                  {hasPermission("employees.manage") && (
+                    <form onSubmit={handleCreateDependent} className="space-y-3 text-sm">
+                      <div>
+                        <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("relationship_type")}</label>
+                        <select
+                          value={dependentForm.relationship_type}
+                          onChange={(e) => setDependentForm({ ...dependentForm, relationship_type: e.target.value })}
+                          className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                        >
+                          {DEPENDENT_RELATIONSHIP_TYPES.map((rt) => (
+                            <option key={rt} value={rt}>
+                              {dependentRelationshipLabel(rt)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("name")}</label>
+                        <input
+                          required
+                          value={dependentForm.name}
+                          onChange={(e) => setDependentForm({ ...dependentForm, name: e.target.value })}
+                          className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("birth_date")}</label>
+                        <input
+                          type="date"
+                          value={dependentForm.birth_date}
+                          onChange={(e) => setDependentForm({ ...dependentForm, birth_date: e.target.value })}
+                          className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={creatingDependent}
+                        className="text-xs font-semibold text-white rounded-lg px-4 py-2 disabled:opacity-50"
+                        style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}
+                      >
+                        {t("new_dependent")}
+                      </button>
+                    </form>
                   )}
                 </div>
               </div>

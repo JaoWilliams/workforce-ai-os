@@ -141,7 +141,19 @@
     "contract_language": "Idioma del contrato",
     "contract_language_es": "Español",
     "contract_language_en": "Inglés",
-    "contract_language_hint": "El PDF se genera en un solo idioma."
+    "contract_language_hint": "El PDF se genera en un solo idioma.",
+    "dependents_title": "Dependientes",
+    "dependents_hint": "Cónyuge e hijos, usados para aplicar los créditos de renta configurados en Catálogos de Nómina.",
+    "no_dependents": "Sin dependientes registrados todavía.",
+    "new_dependent": "Nuevo dependiente",
+    "dependent_saved_ok": "Dependiente guardado correctamente",
+    "relationship_type": "Parentesco",
+    "relationship_conyuge": "Cónyuge",
+    "relationship_hijo": "Hijo/a",
+    "birth_date": "Fecha de nacimiento",
+    "no_birth_date": "sin registrar",
+    "activate": "Activar",
+    "deactivate": "Desactivar"
   },
   "devices": {
     "title": "Dispositivos",

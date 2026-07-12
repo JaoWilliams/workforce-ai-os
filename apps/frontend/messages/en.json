@@ -141,7 +141,19 @@
     "contract_language": "Contract language",
     "contract_language_es": "Spanish",
     "contract_language_en": "English",
-    "contract_language_hint": "The PDF is generated in a single language."
+    "contract_language_hint": "The PDF is generated in a single language.",
+    "dependents_title": "Dependents",
+    "dependents_hint": "Spouse and children, used to apply the tax credits configured in Payroll Catalogs.",
+    "no_dependents": "No dependents registered yet.",
+    "new_dependent": "New dependent",
+    "dependent_saved_ok": "Dependent saved successfully",
+    "relationship_type": "Relationship",
+    "relationship_conyuge": "Spouse",
+    "relationship_hijo": "Child",
+    "birth_date": "Birth date",
+    "no_birth_date": "not recorded",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
   },
   "devices": {
     "title": "Devices",
