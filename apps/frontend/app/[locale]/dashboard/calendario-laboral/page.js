@@ -47,6 +47,7 @@ export default function CalendarioLaboralPage() {
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [branchFilter, setBranchFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [confirmRemoveId, setConfirmRemoveId] = useState(null);
 
   useEffect(() => {
     loadAll();
@@ -180,8 +181,13 @@ export default function CalendarioLaboralPage() {
     }
   }
 
-  async function handleRemoveAssignment(assignmentId) {
-    if (!window.confirm(t("remove_confirm"))) return;
+  function handleRemoveAssignment(assignmentId) {
+    setConfirmRemoveId(assignmentId);
+  }
+
+  async function confirmRemoveAssignment() {
+    const assignmentId = confirmRemoveId;
+    setConfirmRemoveId(null);
     try {
       await apiFetch("/api/shifts/assignments/" + assignmentId, { method: "DELETE" });
       showToast(t("assignment_removed_toast"));
@@ -349,6 +355,29 @@ export default function CalendarioLaboralPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {confirmRemoveId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-lg border border-bk-brown/10 p-5 max-w-sm w-full">
+            <p className="text-sm text-bk-brown mb-4">{t("remove_confirm")}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmRemoveId(null)}
+                className="text-xs font-semibold text-bk-brown border border-bk-brown/30 rounded-lg px-4 py-2"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={confirmRemoveAssignment}
+                className="text-xs font-semibold text-white rounded-lg px-4 py-2"
+                style={{ background: "linear-gradient(135deg, var(--color-bk-orange), var(--color-bk-red))" }}
+              >
+                {t("remove_confirm_button")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

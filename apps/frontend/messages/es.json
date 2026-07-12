@@ -900,7 +900,9 @@
     "day_3": "Jueves",
     "day_4": "Viernes",
     "day_5": "Sabado",
-    "day_6": "Domingo"
+    "day_6": "Domingo",
+    "cancel": "Cancelar",
+    "remove_confirm_button": "Quitar asignacion"
   },
   "labor_analytics_page": {
     "title": "Centro de Analisis Gerencial",

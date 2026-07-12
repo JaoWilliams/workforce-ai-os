@@ -900,7 +900,9 @@
     "day_3": "Thursday",
     "day_4": "Friday",
     "day_5": "Saturday",
-    "day_6": "Sunday"
+    "day_6": "Sunday",
+    "cancel": "Cancel",
+    "remove_confirm_button": "Remove assignment"
   },
   "labor_analytics_page": {
     "title": "Management Analysis Center",
