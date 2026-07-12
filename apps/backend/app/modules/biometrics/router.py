@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 
 from app.core.audit import log_audit
+from app.core.onboarding import sync_onboarding_flags
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
 from app.db.models import BiometricEnrollment, ConsentRecord, Device, Employee, User
@@ -101,6 +102,8 @@ async def create_biometric_enrollment(
         )
         await session.commit()
         await session.refresh(enrollment)
+        await sync_onboarding_flags(session, current_user.tenant_id, employee)
+        await session.commit()
     return _to_response(enrollment)
 
 

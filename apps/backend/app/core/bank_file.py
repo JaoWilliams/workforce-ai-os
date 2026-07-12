@@ -62,16 +62,16 @@ async def generate_bank_transfer_rows(session, tenant_id: UUID, period: PayrollP
         employee_name = f"{employee.first_name} {employee.last_name}" if employee else None
 
         if row.get("net_pay") is None:
-            missing.append({"employee_id": row["employee_id"], "employee_name": employee_name, "reason": "net_pay_not_computable"})
+            missing.append({"employee_id": str(row["employee_id"]), "employee_name": employee_name, "reason": "net_pay_not_computable"})
             continue
         if employee is None:
-            missing.append({"employee_id": row["employee_id"], "employee_name": None, "reason": "employee_not_found"})
+            missing.append({"employee_id": str(row["employee_id"]), "employee_name": None, "reason": "employee_not_found"})
             continue
         if row["net_pay"] <= 0:
-            missing.append({"employee_id": employee.id, "employee_name": employee_name, "reason": "zero_or_negative_net_pay"})
+            missing.append({"employee_id": str(employee.id), "employee_name": employee_name, "reason": "zero_or_negative_net_pay"})
             continue
         if not employee.bank_account_type or not employee.bank_account_number:
-            missing.append({"employee_id": employee.id, "employee_name": employee_name, "reason": "missing_bank_account"})
+            missing.append({"employee_id": str(employee.id), "employee_name": employee_name, "reason": "missing_bank_account"})
             continue
 
         rows.append({

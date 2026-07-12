@@ -102,6 +102,16 @@ class VacationConfigResponse(BaseModel):
     cycle_weeks: float
 
 
+class ShiftAlertConfigUpsert(BaseModel):
+    no_show_grace_minutes: int = 15
+    not_closed_grace_minutes: int = 15
+
+
+class ShiftAlertConfigResponse(BaseModel):
+    no_show_grace_minutes: int
+    not_closed_grace_minutes: int
+
+
 class AguinaldoConfigUpsert(BaseModel):
     period_start_month: int = 12
     period_start_day: int = 1

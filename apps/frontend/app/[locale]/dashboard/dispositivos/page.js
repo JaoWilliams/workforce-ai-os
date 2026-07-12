@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Router, Fingerprint } from "lucide-react";
+import { Router, Fingerprint, CheckCircle2 } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
 import { usePermissions } from "../../../../lib/permissions";
+import { useSearchParams } from "next/navigation";
 
 const BRANDS = ["tiandy", "hikvision", "zkteco"];
 const METHODS = ["facial", "fingerprint", "card", "password"];
@@ -56,12 +57,23 @@ export default function DispositivosPage() {
   const [granting, setGranting] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [bioError, setBioError] = useState(null);
+  const [branchFilter, setBranchFilter] = useState("");
+  const [showAllEmployees, setShowAllEmployees] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     loadDevices();
     apiFetch("/api/branches").then(setBranches).catch(() => {});
-    apiFetch("/api/employees").then(setEmployees).catch(() => {});
+    loadEmployees();
   }, []);
+
+  useEffect(() => {
+    const hi = searchParams.get("highlight");
+    if (hi && employees.length > 0 && !selectedEmployee) {
+      const emp = employees.find((e) => e.id === hi);
+      if (emp) selectEmployee(emp);
+    }
+  }, [searchParams, employees]);
 
   function loadDevices() {
     setDevicesLoading(true);
@@ -69,6 +81,10 @@ export default function DispositivosPage() {
       .then(setDevices)
       .catch((err) => setDevicesError(err.message))
       .finally(() => setDevicesLoading(false));
+  }
+
+  function loadEmployees() {
+    return apiFetch("/api/employees").then(setEmployees).catch(() => {});
   }
 
   function branchName(id) {
@@ -86,6 +102,17 @@ export default function DispositivosPage() {
       branchName(d.branch_id).toLowerCase().includes(q)
     );
   });
+
+  const activeEmployees = employees.filter((e) => e.active);
+  const branchFilteredEmployees = activeEmployees.filter(
+    (e) => !branchFilter || e.branch_id === branchFilter
+  );
+  const pendingBioEmployees = branchFilteredEmployees.filter(
+    (e) => e.onboarding_missing && e.onboarding_missing.includes("biometric")
+  );
+  const bioChecklist = showAllEmployees ? branchFilteredEmployees : pendingBioEmployees;
+  const bioTotal = branchFilteredEmployees.length;
+  const bioPending = pendingBioEmployees.length;
 
   function toggleMethod(key) {
     setForm((f) => ({ ...f, methods: { ...f.methods, [key]: !f.methods[key] } }));
@@ -253,6 +280,11 @@ export default function DispositivosPage() {
       showToast(tb("enroll_ok"));
       const data = await apiFetch("/api/employees/" + selectedEmployee.id + "/biometric-enrollments");
       setEnrollments(data);
+      await loadEmployees();
+      if (!showAllEmployees) {
+        setSelectedEmployee(null);
+        setEnrollments([]);
+      }
     } catch (err) {
       setBioError(err.message);
       showToast(err.message, "error");
@@ -602,9 +634,41 @@ export default function DispositivosPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-6">
-        <Fingerprint size={20} className="text-bk-brown/60" />
-        <h1 className="font-heading text-2xl font-extrabold text-bk-brown">{tb("title")}</h1>
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <Fingerprint size={20} className="text-bk-brown/60" />
+          <h1 className="font-heading text-2xl font-extrabold text-bk-brown">{tb("title")}</h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+            className="border border-bk-brown/20 rounded-md px-2 py-1.5 text-xs"
+          >
+            <option value="">{tb("filter_all_branches")}</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setShowAllEmployees((v) => !v)}
+            className="text-xs font-semibold text-bk-brown border border-bk-brown/30 rounded-lg px-3 py-1.5"
+          >
+            {showAllEmployees ? tb("show_pending_only") : tb("show_all_employees")}
+          </button>
+        </div>
+      </div>
+      <p className="text-sm text-bk-brown/60 mb-2">
+        {tb("checklist_pending_prefix")} <strong className="text-bk-brown">{bioPending}</strong> {tb("checklist_of")} {bioTotal}
+      </p>
+      <div className="w-full h-1.5 bg-bk-brown/10 rounded-full overflow-hidden mb-6">
+        <div
+          className="h-full bg-green-500 transition-all"
+          style={{ width: (bioTotal > 0 ? ((bioTotal - bioPending) / bioTotal) * 100 : 0) + "%" }}
+        />
       </div>
       {bioError && (
         <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-4">{bioError}</p>
@@ -614,25 +678,40 @@ export default function DispositivosPage() {
         <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 overflow-hidden">
           {employees.length === 0 ? (
             <LoadingState compact />
+          ) : bioChecklist.length === 0 ? (
+            <EmptyState icon={CheckCircle2} message={tb("all_enrolled")} />
           ) : (
             <ul className="divide-y divide-bk-brown/10">
-              {employees.map((emp) => (
-                <li key={emp.id}>
-                  <button
-                    onClick={() => selectEmployee(emp)}
-                    className={
-                      selectedEmployee && selectedEmployee.id === emp.id
-                        ? "w-full text-left px-5 py-4 transition bg-bk-orange/10"
-                        : "w-full text-left px-5 py-4 transition hover:bg-bk-cream2"
-                    }
-                  >
-                    <p className="font-semibold text-bk-brown">
-                      {emp.first_name} {emp.last_name}
-                    </p>
-                    <p className="text-xs text-bk-brown/60 mt-0.5">{emp.position}</p>
-                  </button>
-                </li>
-              ))}
+              {bioChecklist.map((emp) => {
+                const isPending = emp.onboarding_missing && emp.onboarding_missing.includes("biometric");
+                return (
+                  <li key={emp.id}>
+                    <button
+                      onClick={() => selectEmployee(emp)}
+                      className={
+                        (selectedEmployee && selectedEmployee.id === emp.id
+                          ? "w-full text-left px-5 py-4 transition bg-bk-orange/10 "
+                          : "w-full text-left px-5 py-4 transition hover:bg-bk-cream2 ") +
+                        "flex items-center justify-between gap-2"
+                      }
+                    >
+                      <div>
+                        <p className="font-semibold text-bk-brown">
+                          {emp.first_name} {emp.last_name}
+                        </p>
+                        <p className="text-xs text-bk-brown/60 mt-0.5">{emp.position}</p>
+                      </div>
+                      {isPending ? (
+                        <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-bk-orange/10 text-bk-orange shrink-0">
+                          {tb("pending_badge")}
+                        </span>
+                      ) : (
+                        <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

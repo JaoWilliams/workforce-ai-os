@@ -687,6 +687,9 @@ class Contract(Base):
     # (el monto de UN período de pago, no necesariamente mensual) y el divisor de
     # horas usado para derivar la tarifa por hora en la nómina bruta (core/payroll.py).
     pay_frequency: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'mensual'"))
+    # es | en - idioma unico en que se genera el PDF del contrato (#98: se elimino
+    # el PDF bilingue, ahora se elige un idioma segun quien crea el contrato)
+    language: Mapped[str] = mapped_column(String(2), nullable=False, server_default=text("'es'"))
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
 
@@ -857,4 +860,20 @@ class ShiftAssignment(Base):
     )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class ShiftAlertConfig(Base):
+    """Config de avisos de seguimiento de turno (#138) - minutos de gracia
+    antes de marcar un aviso de no-show (no marco entrada) o de turno sin
+    cerrar (no marco salida). Un solo row por tenant, mismo patron que
+    VacationConfig/AguinaldoConfig. Sin valor quemado en el calculo: si no
+    existe el row, el endpoint de avisos usa 15 minutos por defecto pero
+    queda visible/editable en catalogos igual que los demas."""
+    __tablename__ = "shift_alert_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    no_show_grace_minutes: Mapped[int] = mapped_column(nullable=False, default=15, server_default=text("15"))
+    not_closed_grace_minutes: Mapped[int] = mapped_column(nullable=False, default=15, server_default=text("15"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

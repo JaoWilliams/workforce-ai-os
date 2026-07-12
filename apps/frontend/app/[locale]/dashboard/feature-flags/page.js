@@ -17,6 +17,7 @@ export default function FeatureFlagsPage() {
   const [error, setError] = useState(null);
   const [toggling, setToggling] = useState(null);
   const [message, setMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     load();
@@ -55,11 +56,25 @@ export default function FeatureFlagsPage() {
     return translated === key ? source : translated;
   }
 
-  const categories = [...new Set(flags.map((f) => f.category))];
+  const filteredFlags = flags.filter((f) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return f.name.toLowerCase().includes(q) || f.code.toLowerCase().includes(q);
+  });
+  const categories = [...new Set(filteredFlags.map((f) => f.category))];
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-extrabold text-bk-brown mb-6">{t("title")}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-heading text-2xl font-extrabold text-bk-brown">{t("title")}</h1>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t("search_placeholder")}
+          className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm w-64"
+        />
+      </div>
 
       {error && (
         <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -69,6 +84,8 @@ export default function FeatureFlagsPage() {
         <LoadingState />
       ) : flags.length === 0 ? (
         <EmptyState icon={ToggleLeft} message={t("no_flags")} />
+      ) : filteredFlags.length === 0 ? (
+        <p className="text-sm text-bk-brown/60">{t("no_search_results")}</p>
       ) : (
         <div className="space-y-6">
           {categories.map((cat) => (
@@ -79,12 +96,15 @@ export default function FeatureFlagsPage() {
                 </h2>
               </div>
               <ul className="divide-y divide-bk-brown/10">
-                {flags
+                {filteredFlags
                   .filter((f) => f.category === cat)
                   .map((f) => (
                     <li key={f.code} className="px-5 py-4 flex items-center justify-between gap-4">
                       <div>
                         <p className="font-semibold text-bk-brown text-sm">{f.name}</p>
+                        {f.description && (
+                          <p className="text-xs text-bk-brown/70 mt-0.5">{f.description}</p>
+                        )}
                         <p className="text-xs text-bk-brown/50 mt-0.5">{sourceLabel(f.source)}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">

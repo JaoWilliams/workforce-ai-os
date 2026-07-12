@@ -10,6 +10,8 @@ import {
   ShieldAlert,
   Flame,
   CalendarClock,
+  ClipboardList,
+  AlarmClock,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -48,6 +50,7 @@ export default function DashboardHome() {
   const [flags, setFlags] = useState([]);
   const [shiftTemplates, setShiftTemplates] = useState([]);
   const [shiftAssignments, setShiftAssignments] = useState([]);
+  const [shiftAlerts, setShiftAlerts] = useState([]);
 
   useEffect(() => {
     setLoading(true);
@@ -60,8 +63,9 @@ export default function DashboardHome() {
       apiFetch("/api/confianza-operativa/flags"),
       apiFetch("/api/shifts"),
       apiFetch("/api/shifts/assignments"),
+      apiFetch("/api/shifts/alerts").catch(() => []),
     ])
-      .then(([emp, br, dev, att, exc, fl, st, sa]) => {
+      .then(([emp, br, dev, att, exc, fl, st, sa, sal]) => {
         setEmployees(emp);
         setBranches(br);
         setDevices(dev);
@@ -70,6 +74,7 @@ export default function DashboardHome() {
         setFlags(fl);
         setShiftTemplates(st);
         setShiftAssignments(sa);
+        setShiftAlerts(sal);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -92,6 +97,9 @@ export default function DashboardHome() {
   const exceptionsPending = pendingExceptions.length;
   const flagsUnresolved = flags.filter((f) => !f.resolved).length;
   const flagsHigh = flags.filter((f) => !f.resolved && f.severity === "high").length;
+  const onboardingIncomplete = employees.filter(
+    (e) => e.active && e.onboarding_missing && e.onboarding_missing.length > 0
+  ).length;
 
   const kpis = [
     { label: t("stat_employees_active"), value: activeEmployees, icon: Users, color: COLOR_BROWN },
@@ -100,6 +108,8 @@ export default function DashboardHome() {
     { label: t("stat_exceptions_pending"), value: exceptionsPending, icon: AlertTriangle, color: COLOR_ORANGE },
     { label: t("stat_flags_unresolved"), value: flagsUnresolved, icon: ShieldAlert, color: COLOR_ORANGE },
     { label: t("stat_flags_high"), value: flagsHigh, icon: Flame, color: COLOR_RED },
+    { label: t("stat_onboarding_incomplete"), value: onboardingIncomplete, icon: ClipboardList, color: COLOR_ORANGE },
+    { label: t("stat_shift_alerts"), value: shiftAlerts.length, icon: AlarmClock, color: COLOR_ORANGE },
   ];
 
   const checkinsTrend = useMemo(() => {

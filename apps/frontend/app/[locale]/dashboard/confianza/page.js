@@ -14,15 +14,19 @@ export default function ConfianzaPage() {
   const { showToast } = useToast();
   const [flags, setFlags] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [filter, setFilter] = useState("all");
   const [resolvingId, setResolvingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
   useEffect(() => {
     load();
     apiFetch("/api/employees").then(setEmployees).catch(() => {});
+    apiFetch("/api/branches").then(setBranches).catch(() => {});
   }, []);
 
   function load() {
@@ -84,11 +88,25 @@ export default function ConfianzaPage() {
   const resolved = flags.filter((f) => f.resolved).length;
   const highSeverity = flags.filter((f) => f.severity === "high" && !f.resolved).length;
 
-  const displayed = flags.filter((f) => {
-    if (filter === "pending") return !f.resolved;
-    if (filter === "resolved") return f.resolved;
-    return true;
-  });
+  const displayed = flags
+    .filter((f) => {
+      if (filter === "pending") return !f.resolved;
+      if (filter === "resolved") return f.resolved;
+      return true;
+    })
+    .filter((f) => {
+      if (!branchFilter) return true;
+      const emp = employees.find((x) => x.id === f.employee_id);
+      return emp && emp.branch_id === branchFilter;
+    })
+    .filter((f) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        employeeName(f.employee_id).toLowerCase().includes(q) ||
+        ruleLabel(f.rule_code).toLowerCase().includes(q)
+      );
+    });
 
   return (
     <div>
@@ -114,7 +132,7 @@ export default function ConfianzaPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
         {["all", "pending", "resolved"].map((f) => (
           <button
             key={f}
@@ -133,6 +151,25 @@ export default function ConfianzaPage() {
             {t("filter_" + f)}
           </button>
         ))}
+        <select
+          value={branchFilter}
+          onChange={(e) => setBranchFilter(e.target.value)}
+          className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm ml-auto sm:w-44"
+        >
+          <option value="">{t("filter_all_branches")}</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t("search_placeholder")}
+          className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm w-56"
+        />
       </div>
 
       {error && (

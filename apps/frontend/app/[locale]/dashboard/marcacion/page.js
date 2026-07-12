@@ -7,6 +7,7 @@ import { Clock } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
 import { usePermissions } from "../../../../lib/permissions";
+import { useToast } from "../../../../lib/toast";
 
 const TYPES = ["entrada", "salida"];
 const METHODS = ["facial", "fingerprint", "card", "manual"];
@@ -22,13 +23,16 @@ function nowLocalInputValue() {
 export default function MarcacionPage() {
   const t = useTranslations("attendance");  
   const { hasPermission } = usePermissions();
+  const { showToast } = useToast();
   const params = useParams();
   const locale = params.locale;
   const [searchQuery, setSearchQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
   const [records, setRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [devices, setDevices] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -42,11 +46,13 @@ export default function MarcacionPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
   const [createOk, setCreateOk] = useState(false);
+  const [motivo, setMotivo] = useState("");
 
   useEffect(() => {
     loadRecords();
     apiFetch("/api/employees").then(setEmployees).catch(() => {});
     apiFetch("/api/devices").then(setDevices).catch(() => {});
+    apiFetch("/api/branches").then(setBranches).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -74,11 +80,17 @@ export default function MarcacionPage() {
     return e ? e.first_name + " " + e.last_name : id;
   }
 
-  const filteredRecords = records.filter((r) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return employeeName(r.employee_id).toLowerCase().includes(q);
-  });
+  const filteredRecords = records
+    .filter((r) => {
+      if (!branchFilter) return true;
+      const emp = employees.find((x) => x.id === r.employee_id);
+      return emp && emp.branch_id === branchFilter;
+    })
+    .filter((r) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return employeeName(r.employee_id).toLowerCase().includes(q);
+    });
 
   function deviceLabel(id) {
     const d = devices.find((x) => x.id === id);
@@ -99,12 +111,26 @@ export default function MarcacionPage() {
         biometric_enrollment_id: enrollmentId || null,
         recorded_at: new Date(recordedAt).toISOString(),
       };
-      await apiFetch("/api/attendance", { method: "POST", body: JSON.stringify(payload) });
+      const created = await apiFetch("/api/attendance", { method: "POST", body: JSON.stringify(payload) });
+      if (method === "manual") {
+        await apiFetch("/api/exceptions", {
+          method: "POST",
+          body: JSON.stringify({
+            employee_id: employeeId,
+            exception_type: "manual_correction",
+            justification: motivo,
+            attendance_record_id: created.id,
+          }),
+        });
+      }
       setCreateOk(true);
+      showToast(method === "manual" ? t("created_pending_toast") : t("created_ok_toast"));
+      setMotivo("");
       setRecordedAt(nowLocalInputValue());
       loadRecords();
     } catch (err) {
       setCreateError(err.message);
+      showToast(err.message, "error");
     } finally {
       setCreating(false);
     }
@@ -121,7 +147,7 @@ export default function MarcacionPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 overflow-hidden">
-          <div className="p-3 border-b border-bk-brown/10">
+          <div className="p-3 border-b border-bk-brown/10 flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={searchQuery}
@@ -129,6 +155,18 @@ export default function MarcacionPage() {
               placeholder={t("search_placeholder")}
               className="w-full border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm"
             />
+            <select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm sm:w-48"
+            >
+              <option value="">{t("filter_all_branches")}</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
           {loading ? (
             <LoadingState />
@@ -159,6 +197,17 @@ export default function MarcacionPage() {
                   <p className="text-xs text-bk-brown/60 mt-0.5">
                     {t("verification_method")}: {t("method_" + r.verification_method)} · {r.recorded_at}
                   </p>
+                  {hasPermission("exceptions.manage") && (
+                    <a
+                      href={
+                        "/" + locale + "/dashboard/excepciones?employee_id=" + r.employee_id +
+                        "&attendance_record_id=" + r.id
+                      }
+                      className="inline-block mt-2 text-[11px] font-semibold text-bk-orange hover:underline"
+                    >
+                      {t("correct_record")}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -246,6 +295,20 @@ export default function MarcacionPage() {
                 </select>
               </div>
             </div>
+            {method === "manual" && (
+              <div>
+                <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("manual_reason")}</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  placeholder={t("manual_reason_hint")}
+                  className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                />
+                <p className="text-[11px] text-bk-orange mt-1">{t("manual_reason_notice")}</p>
+              </div>
+            )}
 
             {method !== "manual" && enrollments.length > 0 && (
               <div>

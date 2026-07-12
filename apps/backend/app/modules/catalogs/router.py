@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import AguinaldoConfig, BankFileConfig, CesantiaConfig, CesantiaScaleRow, ChartOfAccount, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, TaxBracket, User, VacationConfig
+from app.db.models import AguinaldoConfig, BankFileConfig, CesantiaConfig, CesantiaScaleRow, ChartOfAccount, Holiday, PayrollConcept, PayrollHoursConfig, RentaCredits, ShiftAlertConfig, TaxBracket, User, VacationConfig
 from app.modules.catalogs.schemas import (
     PayrollConceptCreate,
     PayrollConceptResponse,
@@ -35,6 +35,8 @@ from app.modules.catalogs.schemas import (
     ChartOfAccountResponse,
     BankFileConfigUpsert,
     BankFileConfigResponse,
+    ShiftAlertConfigUpsert,
+    ShiftAlertConfigResponse,
 )
 from app.modules.rbac.dependencies import require_permission
 
@@ -433,6 +435,61 @@ async def get_vacation_config(
     if config is None:
         return None
     return VacationConfigResponse(cycle_weeks=float(config.cycle_weeks))
+
+
+@hours_router.put("/shift-alert-config", response_model=ShiftAlertConfigResponse)
+async def upsert_shift_alert_config(
+    payload: ShiftAlertConfigUpsert,
+    current_user: User = Depends(require_permission("catalogs.manage")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(ShiftAlertConfig).where(ShiftAlertConfig.tenant_id == current_user.tenant_id)
+        )
+        config = result.scalars().first()
+        if config is None:
+            config = ShiftAlertConfig(
+                id=uuid4(), tenant_id=current_user.tenant_id,
+                no_show_grace_minutes=payload.no_show_grace_minutes,
+                not_closed_grace_minutes=payload.not_closed_grace_minutes,
+            )
+            session.add(config)
+            action = "shift_alert_config.created"
+        else:
+            config.no_show_grace_minutes = payload.no_show_grace_minutes
+            config.not_closed_grace_minutes = payload.not_closed_grace_minutes
+            action = "shift_alert_config.updated"
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action=action, resource_type="shift_alert_config", resource_id=config.id,
+            extra={
+                "no_show_grace_minutes": payload.no_show_grace_minutes,
+                "not_closed_grace_minutes": payload.not_closed_grace_minutes,
+            },
+        )
+        await session.commit()
+        await session.refresh(config)
+    return ShiftAlertConfigResponse(
+        no_show_grace_minutes=config.no_show_grace_minutes,
+        not_closed_grace_minutes=config.not_closed_grace_minutes,
+    )
+
+
+@hours_router.get("/shift-alert-config", response_model=Optional[ShiftAlertConfigResponse])
+async def get_shift_alert_config(
+    current_user: User = Depends(require_permission("catalogs.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(
+            select(ShiftAlertConfig).where(ShiftAlertConfig.tenant_id == current_user.tenant_id)
+        )
+        config = result.scalars().first()
+    if config is None:
+        return None
+    return ShiftAlertConfigResponse(
+        no_show_grace_minutes=config.no_show_grace_minutes,
+        not_closed_grace_minutes=config.not_closed_grace_minutes,
+    )
 
 
 @hours_router.put("/aguinaldo-config", response_model=AguinaldoConfigResponse)

@@ -14,6 +14,7 @@ class FeatureFlagCatalogItem(BaseModel):
 class TenantFeatureFlagStatus(BaseModel):
     code: str
     name: str
+    description: str
     category: str
     enabled: bool
     source: str  # "branch_override" | "tenant_override" | "default"

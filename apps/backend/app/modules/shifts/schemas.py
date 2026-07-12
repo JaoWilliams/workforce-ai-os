@@ -57,3 +57,14 @@ class ShiftCoverageResponse(BaseModel):
     min_coverage: int
     assigned_count: int
     covered: bool
+
+
+class ShiftAlertResponse(BaseModel):
+    type: str
+    employee_id: UUID
+    employee_name: str
+    branch_id: UUID
+    shift_template_id: UUID
+    shift_name: str
+    scheduled_at: datetime
+    minutes_late: int

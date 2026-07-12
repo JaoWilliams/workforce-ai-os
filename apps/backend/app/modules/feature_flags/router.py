@@ -57,7 +57,8 @@ async def list_tenant_status(
             else:
                 enabled, source = (flag.category == "core"), "default"
             status_list.append(TenantFeatureFlagStatus(
-                code=flag.code, name=flag.name, category=flag.category, enabled=enabled, source=source,
+                code=flag.code, name=flag.name, description=flag.description,
+                category=flag.category, enabled=enabled, source=source,
             ))
     return status_list
 
@@ -113,5 +114,6 @@ async def toggle_tenant_flag(
 
     source = "branch_override" if payload.branch_id else "tenant_override"
     return TenantFeatureFlagStatus(
-        code=flag.code, name=flag.name, category=flag.category, enabled=payload.enabled, source=source,
+        code=flag.code, name=flag.name, description=flag.description,
+        category=flag.category, enabled=payload.enabled, source=source,
     )

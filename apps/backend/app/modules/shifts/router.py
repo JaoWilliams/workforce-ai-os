@@ -1,4 +1,4 @@
-from datetime import date as date_type
+from datetime import date as date_type, datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,9 +7,11 @@ from sqlalchemy import select
 from app.core.audit import log_audit
 from app.core.i18n import get_locale, translate
 from app.core.tenant import tenant_session
-from app.db.models import Branch, Employee, ShiftAssignment, ShiftTemplate, User
+from app.core.shift_alerts import get_shift_alerts
+from app.db.models import AttendanceRecord, Branch, Employee, ShiftAlertConfig, ShiftAssignment, ShiftTemplate, User
 from app.modules.rbac.dependencies import require_permission
 from app.modules.shifts.schemas import (
+    ShiftAlertResponse,
     ShiftAssignmentCreate,
     ShiftAssignmentResponse,
     ShiftCoverageResponse,
@@ -209,6 +211,25 @@ async def list_shift_assignments(
         result = await session.execute(query)
         assignments = result.scalars().all()
     return [_assignment_to_response(a) for a in assignments]
+
+
+@router.get("/alerts", response_model=list[ShiftAlertResponse])
+async def list_shift_alerts(
+    branch_id: UUID | None = None,
+    on_date: date_type | None = None,
+    current_user: User = Depends(require_permission("shifts.view")),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        config_result = await session.execute(
+            select(ShiftAlertConfig).where(ShiftAlertConfig.tenant_id == current_user.tenant_id)
+        )
+        config = config_result.scalars().first()
+        target_date = on_date or date_type.today()
+        now = datetime.now(timezone.utc)
+        alerts = await get_shift_alerts(session, current_user.tenant_id, config, target_date, now)
+        if branch_id is not None:
+            alerts = [a for a in alerts if a["branch_id"] == branch_id]
+    return [ShiftAlertResponse(**a) for a in alerts]
 
 
 @router.get("/{shift_template_id}/coverage", response_model=ShiftCoverageResponse)

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { apiFetch, apiFetchBlob } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { usePermissions } from "../../../../lib/permissions";
@@ -10,6 +11,8 @@ const ID_TYPES = ["cedula_fisica", "cedula_juridica", "dimex", "pasaporte"];
 const CONTRACT_TYPES = ["indefinido", "plazo_fijo", "por_obra"];
 const CURRENCIES = ["CRC", "USD", "GTQ", "HNL", "NIO", "PAB"];
 const PAY_FREQUENCIES = ["semanal", "quincenal", "bisemanal", "mensual"];
+const BANK_ACCOUNT_TYPES = ["Cuenta de Ahorro", "Cuenta Corriente"];
+const CONTRACT_LANGUAGES = ["es", "en"];
 
 const emptyForm = {
   branch_id: "",
@@ -30,11 +33,16 @@ const emptyContractForm = {
   base_salary: "",
   currency: "CRC",
   pay_frequency: "mensual",
+  language: "es",
 };
 
 export default function EmpleadosPage() {
   const t = useTranslations("employees");  
   const { hasPermission } = usePermissions();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const params = useParams();
+  const locale = params.locale;
   const { showToast } = useToast();
 
   const [employees, setEmployees] = useState([]);
@@ -43,6 +51,7 @@ export default function EmpleadosPage() {
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const [contracts, setContracts] = useState([]);
   const [contractsLoading, setContractsLoading] = useState(false);
   const [downloadError, setDownloadError] = useState(null);
@@ -58,11 +67,19 @@ export default function EmpleadosPage() {
   const [contractForm, setContractForm] = useState(emptyContractForm);
   const [creatingContract, setCreatingContract] = useState(false);
   const [contractError, setContractError] = useState(null);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(false);
 
   useEffect(() => {
     loadEmployees();
     apiFetch("/api/branches").then(setBranches).catch(() => {});
   }, []);
+  useEffect(() => {
+    const highlightId = searchParams.get("highlight");
+    if (highlightId && employees.length > 0) {
+      const emp = employees.find((e) => e.id === highlightId);
+      if (emp) selectEmployee(emp);
+    }
+  }, [employees, searchParams]);
 
   function loadEmployees() {
     setLoading(true);
@@ -77,16 +94,18 @@ export default function EmpleadosPage() {
     return b ? b.name : id;
   }
 
-  const filteredEmployees = employees.filter((emp) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      emp.first_name.toLowerCase().includes(q) ||
-      emp.last_name.toLowerCase().includes(q) ||
-      emp.id_number.toLowerCase().includes(q) ||
-      emp.position.toLowerCase().includes(q)
-    );
-  });
+  const filteredEmployees = employees
+    .filter((emp) => (branchFilter ? emp.branch_id === branchFilter : true))
+    .filter((emp) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        emp.first_name.toLowerCase().includes(q) ||
+        emp.last_name.toLowerCase().includes(q) ||
+        emp.id_number.toLowerCase().includes(q) ||
+        emp.position.toLowerCase().includes(q)
+      );
+    });
 
   async function selectEmployee(emp) {
     setSelected(emp);
@@ -95,6 +114,8 @@ export default function EmpleadosPage() {
       phone: emp.phone || "",
       position: emp.position,
       active: emp.active,
+      bank_account_type: emp.bank_account_type || "",
+      bank_account_number: emp.bank_account_number || "",
     });
     setContractForm(emptyContractForm);
     setContracts([]);
@@ -193,6 +214,8 @@ export default function EmpleadosPage() {
         phone: editForm.phone || null,
         position: editForm.position,
         active: editForm.active,
+        bank_account_type: editForm.bank_account_type || null,
+        bank_account_number: editForm.bank_account_number || null,
       };
       const updated = await apiFetch("/api/employees/" + selected.id, {
         method: "PATCH",
@@ -222,6 +245,7 @@ export default function EmpleadosPage() {
         base_salary: parseFloat(contractForm.base_salary),
         currency: contractForm.currency,
         pay_frequency: contractForm.pay_frequency,
+        language: contractForm.language,
       };
       await apiFetch("/api/employees/" + selected.id + "/contracts", {
         method: "POST",
@@ -241,11 +265,33 @@ export default function EmpleadosPage() {
     }
   }
 
+  async function handleOnboardingCheck() {
+    setCheckingOnboarding(true);
+    try {
+      await apiFetch("/api/employees/onboarding-check", { method: "POST" });
+      router.push("/" + locale + "/dashboard/onboarding");
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setCheckingOnboarding(false);
+    }
+  }
   return (
     <div>
-      <h1 className="font-heading text-2xl font-extrabold text-bk-brown mb-6">
-        {t("title")}
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-heading text-2xl font-extrabold text-bk-brown">
+          {t("title")}
+        </h1>
+        {hasPermission("employees.manage") && (
+          <button
+            onClick={handleOnboardingCheck}
+            disabled={checkingOnboarding}
+            className="text-xs font-semibold text-bk-brown border border-bk-brown/20 rounded-lg px-3 py-1.5 hover:bg-bk-cream2 disabled:opacity-50"
+          >
+            {checkingOnboarding ? "..." : t("onboarding_check_button")}
+          </button>
+        )}
+      </div>
 
       {error && (
         <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -253,7 +299,7 @@ export default function EmpleadosPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <div className="bg-white rounded-xl shadow-sm border border-bk-brown/10 overflow-hidden">
-          <div className="p-3 border-b border-bk-brown/10">
+          <div className="p-3 border-b border-bk-brown/10 flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={searchQuery}
@@ -261,6 +307,18 @@ export default function EmpleadosPage() {
               placeholder={t("search_placeholder")}
               className="w-full border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm"
             />
+            <select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm sm:w-48"
+            >
+              <option value="">{t("filter_all_branches")}</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
           {loading ? (
             <p className="p-4 text-sm text-bk-brown/60">...</p>
@@ -295,6 +353,11 @@ export default function EmpleadosPage() {
                       >
                         {emp.active ? t("active") : t("inactive")}
                       </span>
+                      {emp.onboarding_missing && emp.onboarding_missing.length > 0 && (
+                        <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-orange-100 text-orange-700 ml-1">
+                          {t("onboarding_incomplete")} ({emp.onboarding_missing.length})
+                        </span>
+                      )}
                     </p>
                   </button>
                 </li>
@@ -314,6 +377,16 @@ export default function EmpleadosPage() {
                 <h2 className="font-heading font-bold text-bk-brown mb-4">
                   {t("edit_employee")} — {selected.first_name} {selected.last_name}
                 </h2>
+                {selected.onboarding_missing && selected.onboarding_missing.length > 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4">
+                    <p className="text-xs font-semibold text-orange-700 mb-1">{t("onboarding_incomplete")}</p>
+                    <ul className="text-xs text-orange-700 list-disc list-inside">
+                      {selected.onboarding_missing.map((m) => (
+                        <li key={m}>{t("onboarding_missing_" + m)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {editError && (
                   <p className="text-sm text-bk-red bg-bk-red/10 rounded-lg px-3 py-2 mb-3">{editError}</p>
                 )}
@@ -346,6 +419,31 @@ export default function EmpleadosPage() {
                       onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
                       className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("bank_account_type")}</label>
+                      <select
+                        value={editForm.bank_account_type}
+                        onChange={(e) => setEditForm({ ...editForm, bank_account_type: e.target.value })}
+                        className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                      >
+                        <option value="">{t("select_bank_account_type")}</option>
+                        {BANK_ACCOUNT_TYPES.map((bt) => (
+                          <option key={bt} value={bt}>
+                            {bt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("bank_account_number")}</label>
+                      <input
+                        value={editForm.bank_account_number}
+                        onChange={(e) => setEditForm({ ...editForm, bank_account_number: e.target.value })}
+                        className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                      />
+                    </div>
                   </div>
                   <label className="flex items-center gap-2 text-xs text-bk-brown/70">
                     <input
@@ -487,6 +585,21 @@ export default function EmpleadosPage() {
                         ))}
                       </select>
                       <p className="text-[11px] text-bk-brown/50 mt-1">{t("pay_frequency_hint")}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("contract_language")}</label>
+                      <select
+                        value={contractForm.language}
+                        onChange={(e) => setContractForm({ ...contractForm, language: e.target.value })}
+                        className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                      >
+                        {CONTRACT_LANGUAGES.map((l) => (
+                          <option key={l} value={l}>
+                            {t("contract_language_" + l)}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-bk-brown/50 mt-1">{t("contract_language_hint")}</p>
                     </div>
                     <button
                       type="submit"

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 import { apiFetch } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
@@ -22,15 +23,19 @@ export default function ExcepcionesPage() {
   const t = useTranslations("exceptions_page");  
   const { hasPermission } = usePermissions();
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
   const [exceptions, setExceptions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [trustFlags, setTrustFlags] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
   const [reviewingId, setReviewingId] = useState(null);
   const [reviewNotesMap, setReviewNotesMap] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
   const [employeeId, setEmployeeId] = useState("");
   const [exceptionType, setExceptionType] = useState("late_arrival");
@@ -47,8 +52,18 @@ export default function ExcepcionesPage() {
     apiFetch("/api/employees").then(setEmployees).catch(() => {});
     apiFetch("/api/attendance").then(setAttendanceRecords).catch(() => {});
     apiFetch("/api/confianza-operativa/flags").then(setTrustFlags).catch(() => {});
+    apiFetch("/api/branches").then(setBranches).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const empId = searchParams.get("employee_id");
+    const attId = searchParams.get("attendance_record_id");
+    if (empId) setEmployeeId(empId);
+    if (attId) {
+      setAttendanceRecordId(attId);
+      setExceptionType("manual_correction");
+    }
+  }, [searchParams]);
   function load() {
     setLoading(true);
     apiFetch("/api/exceptions")
@@ -130,17 +145,32 @@ export default function ExcepcionesPage() {
   const employeeAttendance = attendanceRecords.filter((r) => r.employee_id === employeeId);
   const employeeFlags = trustFlags.filter((f) => f.employee_id === employeeId);
 
-  const displayed = exceptions.filter((exc) => {
-    if (filter === "all") return true;
-    return exc.status === filter;
-  });
+  const displayed = exceptions
+    .filter((exc) => {
+      if (filter === "all") return true;
+      return exc.status === filter;
+    })
+    .filter((exc) => {
+      if (!branchFilter) return true;
+      const emp = employees.find((x) => x.id === exc.employee_id);
+      return emp && emp.branch_id === branchFilter;
+    })
+    .filter((exc) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        employeeName(exc.employee_id).toLowerCase().includes(q) ||
+        typeLabel(exc.exception_type).toLowerCase().includes(q) ||
+        exc.justification.toLowerCase().includes(q)
+      );
+    });
 
   return (
     <div>
       <h1 className="font-heading text-2xl font-extrabold text-bk-brown mb-2">{t("title")}</h1>
       <p className="text-sm text-bk-brown/60 mb-6 max-w-2xl">{t("subtitle")}</p>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
         {["all", "pending", "approved", "rejected"].map((f) => (
           <button
             key={f}
@@ -159,6 +189,25 @@ export default function ExcepcionesPage() {
             {t("filter_" + f)}
           </button>
         ))}
+        <select
+          value={branchFilter}
+          onChange={(e) => setBranchFilter(e.target.value)}
+          className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm ml-auto sm:w-44"
+        >
+          <option value="">{t("filter_all_branches")}</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t("search_placeholder")}
+          className="border border-bk-brown/20 rounded-md px-3 py-1.5 text-sm w-56"
+        />
       </div>
 
       {error && (

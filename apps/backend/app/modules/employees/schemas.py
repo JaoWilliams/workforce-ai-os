@@ -40,6 +40,7 @@ class EmployeeResponse(BaseModel):
     active: bool
     bank_account_type: Optional[str] = None
     bank_account_number: Optional[str] = None
+    onboarding_missing: list[str] = []
 
 
 class ContractCreate(BaseModel):
@@ -49,6 +50,7 @@ class ContractCreate(BaseModel):
     base_salary: float
     currency: Literal["CRC", "USD", "GTQ", "HNL", "NIO", "PAB"] = "CRC"
     pay_frequency: Literal["semanal", "quincenal", "bisemanal", "mensual"] = "mensual"
+    language: Literal["es", "en"] = "es"
 
 
 class ContractResponse(BaseModel):
@@ -60,6 +62,7 @@ class ContractResponse(BaseModel):
     base_salary: float
     currency: str
     pay_frequency: str
+    language: str = "es"
     pdf_path: Optional[str] = None
 
 
