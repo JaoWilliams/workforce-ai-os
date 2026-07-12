@@ -56,6 +56,11 @@ export default function ConceptosNominaPage() {
       // genericas cargadas para poder probar el flujo, pendiente de revision
       // con el contador (ver seccion 5.2 del doc maestro). Se reutiliza aca
       // tal cual, sin duplicar el catalogo.
+      // Plan de cuentas contables: mismo catalogo sembrado en la fase 9 de
+      // nomina (asientos contables, core/models ChartOfAccount) - 13 cuentas
+      // genericas cargadas para poder probar el flujo, pendiente de revision
+      // con el contador (ver seccion 5.2 del doc maestro). Se reutiliza aca
+      // tal cual, sin duplicar el catalogo.
       apiFetch("/api/catalogs/chart-of-accounts").catch(() => []),
     ])
       .then(([c, ca]) => {
