@@ -252,7 +252,7 @@ function DashboardShell({ children }) {
             </div>
           )}
           <p className="font-heading font-extrabold text-base leading-tight tracking-normal break-words">
-            WORKFORCE&nbsp;<span className="text-bk-orange">AI</span>
+            WORKFORCE <span className="text-bk-orange">AI</span>
           </p>
           <p className="text-xs text-bk-cream/60 mt-1 uppercase tracking-wide">{session.tenant_slug}</p>
         </div>
