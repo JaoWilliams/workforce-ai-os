@@ -247,7 +247,7 @@ function DashboardShell({ children }) {
       <aside className="w-64 bg-bk-brown text-bk-cream flex flex-col">
         <div className="px-5 py-6 border-b border-bk-orange/25">
           {session.tenant_slug && session.tenant_slug.toLowerCase().includes("burger") && (
-            <div className="bg-white rounded-md px-2 py-1.5 inline-flex items-center mb-3">
+            <div className="bg-white rounded-md px-2 py-1.5 flex items-center justify-center w-fit mx-auto mb-3">
               <img src="/logos/bk-logo.png" alt="Burger King" className="h-8 w-auto" />
             </div>
           )}
