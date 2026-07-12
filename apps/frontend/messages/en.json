@@ -856,5 +856,21 @@
     "leave_type_duelo": "Bereavement",
     "leave_type_otro": "Other",
     "reason": "Reason (optional)"
+  },
+  "ai_center": {
+    "title": "AI Center",
+    "subtitle": "Everything the AI detects across the system, in one place: Operational Trust, payroll anomalies, and shift alerts.",
+    "card_confianza": "Operational Trust alerts",
+    "card_payroll": "Payroll anomalies",
+    "card_shift_alerts": "Shift alerts",
+    "section_confianza": "Operational Trust",
+    "section_payroll": "Payroll Anomalies",
+    "section_shift_alerts": "Shift Alerts",
+    "view_all": "View all",
+    "no_confianza": "No pending operational trust alerts.",
+    "no_payroll": "No payroll anomalies detected.",
+    "no_shift_alerts": "No pending shift alerts.",
+    "alert_no_show": "No clock-in",
+    "alert_not_closed": "Shift not closed"
   }
 }

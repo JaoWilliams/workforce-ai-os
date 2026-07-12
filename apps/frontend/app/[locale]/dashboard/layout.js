@@ -62,7 +62,7 @@ const NAV_GROUPS = [
     icon: Sparkles,
     items: [
       { key: "confianza", href: "/confianza", permission: "confianza.view" },
-      { key: "ai_center", href: "/centro-ia", permission: null, disabled: true },
+      { key: "ai_center", href: "/centro-ia", permission: "confianza.view" },
       { key: "evidence", href: "/evidencias", permission: null, disabled: true },
     ],
   },

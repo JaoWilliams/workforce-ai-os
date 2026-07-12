@@ -856,5 +856,21 @@
     "leave_type_duelo": "Duelo",
     "leave_type_otro": "Otro",
     "reason": "Motivo (opcional)"
+  },
+  "ai_center": {
+    "title": "Centro IA",
+    "subtitle": "Todo lo que la IA detecta en el sistema, en un solo lugar: Confianza Operativa, anomalias de nomina y avisos de turno.",
+    "card_confianza": "Alertas de Confianza Operativa",
+    "card_payroll": "Anomalias de nomina",
+    "card_shift_alerts": "Avisos de turno",
+    "section_confianza": "Confianza Operativa",
+    "section_payroll": "Anomalias de Nomina",
+    "section_shift_alerts": "Avisos de Turno",
+    "view_all": "Ver todas",
+    "no_confianza": "Sin alertas de confianza operativa pendientes.",
+    "no_payroll": "Sin anomalias de nomina detectadas.",
+    "no_shift_alerts": "Sin avisos de turno pendientes.",
+    "alert_no_show": "Sin marcacion de entrada",
+    "alert_not_closed": "Turno sin cerrar"
   }
 }
