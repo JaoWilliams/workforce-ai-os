@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
-import { apiFetch } from "../../../../lib/api";
+import { apiFetch, apiFetchBlob, apiFetchUpload } from "../../../../lib/api";
 import { useToast } from "../../../../lib/toast";
 import { LoadingState, EmptyState } from "../../../../lib/ui";
 import { usePermissions } from "../../../../lib/permissions";
@@ -40,7 +40,8 @@ export default function ExcepcionesPage() {
   const [employeeId, setEmployeeId] = useState("");
   const [exceptionType, setExceptionType] = useState("late_arrival");
   const [justification, setJustification] = useState("");
-  const [evidenceReference, setEvidenceReference] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [attendanceRecordId, setAttendanceRecordId] = useState("");
   const [trustFlagId, setTrustFlagId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -113,6 +114,22 @@ export default function ExcepcionesPage() {
     }
   }
 
+  async function handleDownloadEvidence(exc) {
+    try {
+      const blob = await apiFetchBlob(`/api/exceptions/${exc.id}/evidence`);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = exc.evidence_filename || `evidencia_${exc.id}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
     setCreating(true);
@@ -123,14 +140,20 @@ export default function ExcepcionesPage() {
         employee_id: employeeId,
         exception_type: exceptionType,
         justification,
-        evidence_reference: evidenceReference || null,
+        evidence_reference: null,
         attendance_record_id: attendanceRecordId || null,
         trust_flag_id: trustFlagId || null,
       };
-      await apiFetch("/api/exceptions", { method: "POST", body: JSON.stringify(payload) });
+      const created = await apiFetch("/api/exceptions", { method: "POST", body: JSON.stringify(payload) });
+      if (evidenceFile) {
+        const formData = new FormData();
+        formData.append("file", evidenceFile);
+        await apiFetchUpload(`/api/exceptions/${created.id}/evidence`, formData);
+      }
       showToast(t("created_ok"));
       setJustification("");
-      setEvidenceReference("");
+      setEvidenceFile(null);
+      setFileInputKey((k) => k + 1);
       setAttendanceRecordId("");
       setTrustFlagId("");
       load();
@@ -235,7 +258,13 @@ export default function ExcepcionesPage() {
                   </p>
                   <p className="text-sm text-bk-brown/80 mt-2">{exc.justification}</p>
                   {exc.evidence_reference && (
-                    <p className="text-xs text-bk-brown/60 mt-1 break-all">{exc.evidence_reference}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadEvidence(exc)}
+                      className="text-xs font-semibold text-bk-orange mt-1 underline"
+                    >
+                      {t("download_evidence")}{exc.evidence_filename ? ` (${exc.evidence_filename})` : ""}
+                    </button>
                   )}
                   {exc.status !== "pending" && exc.review_notes && (
                     <p className="text-xs text-bk-brown/50 mt-2 italic">{exc.review_notes}</p>
@@ -341,12 +370,15 @@ export default function ExcepcionesPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("evidence_reference")}</label>
+              <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("evidence_file")}</label>
               <input
-                value={evidenceReference}
-                onChange={(e) => setEvidenceReference(e.target.value)}
-                className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+                key={fileInputKey}
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) => setEvidenceFile(e.target.files[0] || null)}
+                className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5 text-sm"
               />
+              <p className="text-[11px] text-bk-brown/50 mt-1">{t("evidence_hint")}</p>
             </div>
 
             {employeeId && employeeAttendance.length > 0 && (

@@ -812,5 +812,10 @@
     "employee_count": "{count} empleado(s) asignado(s)",
     "select_hint": "Selecciona un departamento de la lista para editarlo.",
     "saved_ok": "Guardado correctamente"
+  },
+  "exceptions": {
+    "evidence_file": "Evidencia (archivo)",
+    "evidence_hint": "Formatos permitidos: JPG, PNG, PDF. Maximo 10MB.",
+    "download_evidence": "Ver evidencia"
   }
 }

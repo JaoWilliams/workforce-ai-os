@@ -839,6 +839,9 @@ class TimeException(Base):
     # Referencia de texto a evidencia (URL/ruta ya alojada en otro lado) — el MVP no
     # construye subsistema de carga de archivos propio para este módulo.
     evidence_reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    # Nombre original del archivo subido (para mostrar/descargar con la
+    # extension correcta) - evidence_reference guarda la ruta interna.
+    evidence_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     # pending | approved | rejected
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(

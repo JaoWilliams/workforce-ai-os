@@ -85,6 +85,31 @@ export async function apiFetchBlob(path) {
   return res.blob();
 }
 
+export async function apiFetchUpload(path, formData) {
+  const token = getToken();
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(path, { method: "POST", headers, body: formData });
+  let body = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+  if (!res.ok) {
+    const detail = body && body.detail ? body.detail : res.statusText;
+    throw new ApiError(
+      typeof detail === "string" ? detail : JSON.stringify(detail),
+      res.status,
+      body
+    );
+  }
+  return body;
+}
+
 export async function login(tenant_slug, email, password) {
   const data = await apiFetch("/api/auth/login", {
     method: "POST",

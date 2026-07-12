@@ -812,5 +812,10 @@
     "employee_count": "{count} employee(s) assigned",
     "select_hint": "Select a department from the list to edit it.",
     "saved_ok": "Saved successfully"
+  },
+  "exceptions": {
+    "evidence_file": "Evidence (file)",
+    "evidence_hint": "Allowed formats: JPG, PNG, PDF. Max 10MB.",
+    "download_evidence": "View evidence"
   }
 }

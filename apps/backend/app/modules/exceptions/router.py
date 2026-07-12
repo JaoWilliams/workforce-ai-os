@@ -1,7 +1,9 @@
+import os
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 
 from app.core.audit import log_audit
@@ -19,13 +21,17 @@ from app.modules.rbac.dependencies import require_permission
 
 router = APIRouter(prefix="/api/exceptions", tags=["exceptions"])
 
+EVIDENCE_STORAGE_DIR = "/app/storage/evidence"
+EVIDENCE_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+EVIDENCE_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+
 
 def _to_response(e: TimeException) -> TimeExceptionResponse:
     return TimeExceptionResponse(
         id=e.id, employee_id=e.employee_id,
         attendance_record_id=e.attendance_record_id, trust_flag_id=e.trust_flag_id,
         exception_type=e.exception_type, justification=e.justification,
-        evidence_reference=e.evidence_reference, status=e.status,
+        evidence_reference=e.evidence_reference, evidence_filename=e.evidence_filename, status=e.status,
         reviewed_by_user_id=e.reviewed_by_user_id, reviewed_at=e.reviewed_at,
         review_notes=e.review_notes, created_at=e.created_at,
     )
@@ -98,6 +104,59 @@ async def list_exceptions(
         result = await session.execute(query)
         exceptions = result.scalars().all()
     return [_to_response(e) for e in exceptions]
+
+
+@router.post("/{exception_id}/evidence", response_model=TimeExceptionResponse)
+async def upload_evidence(
+    exception_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_permission("exceptions.manage")),
+    locale: str = Depends(get_locale),
+):
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in EVIDENCE_ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Formato no permitido - usa JPG, PNG o PDF")
+    content = await file.read()
+    if len(content) > EVIDENCE_MAX_SIZE:
+        raise HTTPException(status_code=400, detail="El archivo supera el limite de 10MB")
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(TimeException).where(TimeException.id == exception_id))
+        exception = result.scalar_one_or_none()
+        if exception is None:
+            raise HTTPException(status_code=404, detail=translate("exceptions.not_found", locale))
+        os.makedirs(EVIDENCE_STORAGE_DIR, exist_ok=True)
+        filepath = os.path.join(EVIDENCE_STORAGE_DIR, f"{exception_id}{ext}")
+        with open(filepath, "wb") as out:
+            out.write(content)
+        exception.evidence_reference = filepath
+        exception.evidence_filename = file.filename
+        await log_audit(
+            session, tenant_id=current_user.tenant_id, actor_user_id=current_user.id,
+            action="time_exception.evidence_uploaded", resource_type="time_exception", resource_id=exception.id,
+            extra={"filename": file.filename},
+        )
+        await session.commit()
+        await session.refresh(exception)
+    return _to_response(exception)
+
+
+@router.get("/{exception_id}/evidence")
+async def download_evidence(
+    exception_id: UUID,
+    current_user: User = Depends(require_permission("exceptions.view")),
+    locale: str = Depends(get_locale),
+):
+    async with tenant_session(current_user.tenant_id) as session:
+        result = await session.execute(select(TimeException).where(TimeException.id == exception_id))
+        exception = result.scalar_one_or_none()
+        if (
+            exception is None
+            or not exception.evidence_reference
+            or not os.path.exists(exception.evidence_reference)
+        ):
+            raise HTTPException(status_code=404, detail=translate("exceptions.not_found", locale))
+        filename = exception.evidence_filename or os.path.basename(exception.evidence_reference)
+    return FileResponse(exception.evidence_reference, filename=filename)
 
 
 @router.get("/pending-check", response_model=PendingExceptionsCheck)

@@ -37,6 +37,7 @@ class TimeExceptionResponse(BaseModel):
     exception_type: str
     justification: str
     evidence_reference: Optional[str]
+    evidence_filename: Optional[str] = None
     status: str
     reviewed_by_user_id: Optional[UUID]
     reviewed_at: Optional[datetime]
