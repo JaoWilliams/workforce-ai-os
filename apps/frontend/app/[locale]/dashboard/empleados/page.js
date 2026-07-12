@@ -17,6 +17,7 @@ const DEPENDENT_RELATIONSHIP_TYPES = ["conyuge", "hijo"];
 
 const emptyForm = {
   branch_id: "",
+  department_id: "",
   first_name: "",
   last_name: "",
   id_type: "cedula_fisica",
@@ -53,6 +54,7 @@ export default function EmpleadosPage() {
 
   const [employees, setEmployees] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -84,6 +86,7 @@ export default function EmpleadosPage() {
   useEffect(() => {
     loadEmployees();
     apiFetch("/api/branches").then(setBranches).catch(() => {});
+    apiFetch("/api/departments").then(setDepartments).catch(() => {});
   }, []);
   useEffect(() => {
     const highlightId = searchParams.get("highlight");
@@ -118,6 +121,11 @@ export default function EmpleadosPage() {
         emp.position.toLowerCase().includes(q)
       );
     });
+
+  function departmentName(id) {
+    const d = departments.find((x) => x.id === id);
+    return d ? d.name : "";
+  }
 
   async function selectEmployee(emp) {
     setSelected(emp);
@@ -206,6 +214,7 @@ export default function EmpleadosPage() {
     try {
       const payload = {
         branch_id: form.branch_id,
+        department_id: form.department_id || null,
         first_name: form.first_name,
         last_name: form.last_name,
         id_type: form.id_type,
@@ -410,7 +419,10 @@ export default function EmpleadosPage() {
                     <p className="text-xs text-bk-brown/60 mt-0.5">
                       {t("id_number")}: {emp.id_number} · {t("position")}: {emp.position}
                     </p>
-                    <p className="text-xs text-bk-brown/60 mt-0.5">{branchName(emp.branch_id)}</p>
+                    <p className="text-xs text-bk-brown/60 mt-0.5">
+                      {branchName(emp.branch_id)}
+                      {emp.department_id ? " · " + departmentName(emp.department_id) : ""}
+                    </p>
                     <p className="text-xs mt-1">
                       <span
                         className={
@@ -796,6 +808,21 @@ export default function EmpleadosPage() {
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-bk-brown/70 mb-1">{t("department")}</label>
+            <select
+              value={form.department_id}
+              onChange={(e) => setForm({ ...form, department_id: e.target.value })}
+              className="w-full border border-bk-brown/20 rounded-md px-2 py-1.5"
+            >
+              <option value="">{t("select_department")}</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
                 </option>
               ))}
             </select>

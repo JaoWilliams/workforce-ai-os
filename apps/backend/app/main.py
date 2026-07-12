@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
+from app.modules.departments.router import router as departments_router
 from app.modules.legal.router import router as legal_router
 from app.modules.catalogs.router import router as catalogs_router
 from app.modules.catalogs.router import hours_router as catalogs_hours_router
@@ -22,6 +23,7 @@ app = FastAPI(title="WORKFORCE AI OS API")
 
 app.include_router(auth_router)
 app.include_router(branches_router)
+app.include_router(departments_router)
 app.include_router(legal_router)
 app.include_router(catalogs_router)
 app.include_router(catalogs_hours_router)

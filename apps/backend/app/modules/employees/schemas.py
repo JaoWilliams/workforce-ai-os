@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class EmployeeCreate(BaseModel):
     branch_id: UUID
+    department_id: Optional[UUID] = None
     first_name: str
     last_name: str
     id_type: Literal["cedula_fisica", "cedula_juridica", "dimex", "pasaporte"]
@@ -29,6 +30,7 @@ class EmployeeUpdate(BaseModel):
 class EmployeeResponse(BaseModel):
     id: UUID
     branch_id: UUID
+    department_id: Optional[UUID] = None
     first_name: str
     last_name: str
     id_type: str

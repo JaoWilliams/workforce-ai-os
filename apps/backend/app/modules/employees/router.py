@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/employees", tags=["employees"])
 
 def _employee_response(e: Employee) -> EmployeeResponse:
     return EmployeeResponse(
-        id=e.id, branch_id=e.branch_id, first_name=e.first_name, last_name=e.last_name,
+        id=e.id, branch_id=e.branch_id, department_id=e.department_id, first_name=e.first_name, last_name=e.last_name,
         id_type=e.id_type, id_number=e.id_number, email=e.email, phone=e.phone,
         position=e.position, hire_date=e.hire_date, active=e.active,
         bank_account_type=e.bank_account_type, bank_account_number=e.bank_account_number,
@@ -61,6 +61,7 @@ async def create_employee(
             id=uuid4(),
             tenant_id=current_user.tenant_id,
             branch_id=payload.branch_id,
+            department_id=payload.department_id,
             first_name=payload.first_name,
             last_name=payload.last_name,
             id_type=payload.id_type,
